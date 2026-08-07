@@ -1,0 +1,12 @@
+{
+  "player": "jbensamo",
+  "rating_blitz": 1750,
+  "generated": "2026-08-04",
+  "engine": "Stockfish 16 @ depth 12, Lichess win% method, 60 blitz games",
+  "blitz": {
+    "acpl": 55, "acpl_white": 53, "acpl_black": 57,
+    "blunders_per_game": 0.65, "mistakes_per_game": 0.70, "inaccuracies_per_game": 2.3,
+    "blunder_phase": {"opening": 0.15, "middlegame": 0.59, "endgame": 0.26}
+  },
+  "targets": {"acpl": 42, "blunders_per_game": 0.40}
+}

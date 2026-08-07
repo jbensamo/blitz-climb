@@ -1,28 +1,31 @@
-# Blitz Climb — jbensamo's chess trainer
+# Blitz Climb
 
-A single-page chess trainer that drills tactics built from your **own** Lichess blitz
-games (engine-verified with Stockfish), tracks your progress, and syncs it across
-devices via a tiny Cloudflare Worker + KV store.
+A personal chess trainer for **jbensamo** (~1750 Lichess blitz -> 1900). It drills tactics
+built from your **own** games (engine-verified with Stockfish), tracks your progress, and
+syncs across devices — hosted on a tiny Cloudflare Worker + KV, no database, no framework.
 
-## What's here
-- `index.html` — the whole app (self-contained; board, puzzles, plan, log, cloud sync).
-- `worker.js` — Cloudflare Worker: serves the app **and** a small progress API
-  (`/api/state?u=<code>`, GET/PUT) backed by a KV namespace bound as `PROGRESS`.
-- `wrangler.toml` — Worker + KV config (fill in the KV namespace id).
-- `build.py` — re-inlines `index.html` into `worker.js` after you edit the app.
+**Open this in Claude Code and read `CLAUDE.md` — it has the full setup.**
 
-## Deploy (Cloudflare, free tier)
-1. Create a KV namespace; put its id in `wrangler.toml` (`PROGRESS` binding).
-2. `python3 build.py` (bundles the current `index.html` into the Worker).
-3. `npx wrangler deploy`.
-4. Open the `*.workers.dev` URL → **Sync** tab → Connect (creates a private sync code).
-   Enter the same code on your other device to sync.
+## TL;DR setup
+```bash
+npm i -g wrangler && wrangler login
+wrangler kv namespace create PROGRESS      # put the id in wrangler.toml
+wrangler secret put ADMIN_TOKEN            # any long random string
+python build.py && wrangler deploy         # -> your https://blitz-climb.*.workers.dev URL
+```
+Open the URL -> **Sync** tab -> Connect -> use the same sync code on your phone and laptop.
 
-## How progress syncs
-Progress is a small JSON blob stored in KV under `state:<code>`. The app keeps a
-localStorage copy as an offline cache but the KV copy is the source of truth, so
-clearing a browser or switching devices never loses your history.
+## What's inside
+- `index.html` — the whole app (playable board, puzzles, weekly plan, progress log, sync).
+- `worker.js` — serves the app + progress API (`/api/state`) + live puzzle set (`/puzzles.json`).
+- `tools/` — Stockfish analysis + puzzle generation from your PGNs.
+- `data/` — current puzzles, your baseline, and the analyzed game samples.
+- `docs/plan.html` — your engine-verified study plan.
+- `.github/workflows/weekly.yml` — optional weekly job that auto-refreshes puzzles from
+  your latest games.
 
-## Roadmap
-- Phase 2: a weekly GitHub Actions job pulls the latest Lichess games, re-runs
-  Stockfish, regenerates the puzzle set from the newest blunders, and writes it to KV.
+## The point
+Your leak is dropping material — same rate at blitz and rapid, so it isn't the clock.
+Baseline ACPL 55; target low-40s (~1900). Every puzzle here is a real position where you
+had a winning move and missed it. Fix that habit (Checks-Captures-Threats before every
+move) and the rating follows.

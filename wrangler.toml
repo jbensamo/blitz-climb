@@ -2,7 +2,10 @@ name = "blitz-climb"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 
-# The KV namespace id is filled in after the namespace is created.
+# Fill in after: wrangler kv namespace create PROGRESS
 [[kv_namespaces]]
 binding = "PROGRESS"
 id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Set the admin token used by the weekly publisher (do NOT commit it):
+#   wrangler secret put ADMIN_TOKEN

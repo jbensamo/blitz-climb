@@ -912,9 +912,10 @@ async function connectCloud(){
 function disconnectCloud(){cloud.on=false;saveCloud();setCloudStatus("Disconnected — saving to this device only.");}
 
 function renderAll(){renderDash();renderCCT();renderChecklist("#weeklyList",WEEKLY,wkPre());renderWork();renderWeekProg();renderLog();renderCloud();}
-renderAll();
-loadPuzzle(firstUnsolved());
-(async function cloudInit(){
+(async function boot(){
+  // Puzzles: try a live set (/puzzles.json, refreshed by the weekly job); fall back to embedded.
+  try{const r=await fetch("puzzles.json",{cache:"no-store"});if(r.ok){const a=await r.json();if(Array.isArray(a)&&a.length&&a[0].fen&&a[0].line)PUZZLES=a;}}catch(e){}
+  renderAll();loadPuzzle(firstUnsolved());
   if(cloud.on&&cloud.code){setCloudStatus("Reconnecting…");
     try{const r=await kvRead();if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);renderAll();loadPuzzle(firstUnsolved());}
       setCloudStatus("Synced ✓ (code “"+cloud.code+"”)");}catch(e){setCloudStatus("Offline — using local copy, will sync on next change");}}

@@ -1,0 +1,37 @@
+name: Weekly chess refresh
+on:
+  schedule:
+    - cron: "0 23 * * 0"   # Sunday 23:00 UTC (~7pm US Eastern). Adjust to your timezone.
+  workflow_dispatch: {}     # allows manual runs
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install Stockfish + Python deps
+        run: |
+          sudo apt-get update && sudo apt-get install -y stockfish
+          pip install -r tools/requirements.txt
+      - name: Pull latest blitz games from Lichess
+        run: |
+          curl -s "https://lichess.org/api/games/user/jbensamo?max=60&perfType=blitz&clocks=true&evals=true&opening=true" -o data/games/blitz_latest.pgn
+          echo "games:"; grep -c '\[Event ' data/games/blitz_latest.pgn || true
+      - name: Analyze (ACPL / blunders vs baseline)
+        run: python tools/analyze.py data/games/blitz_latest.pgn jbensamo | tee data/last_report.txt
+      - name: Regenerate puzzles from newest blunders
+        run: rm -f candidates.json && python tools/generate_puzzles.py data/games/blitz_latest.pgn jbensamo
+      - name: Publish fresh puzzles to Cloudflare KV
+        if: ${{ env.CF_WORKER_URL != '' }}
+        env:
+          CF_WORKER_URL: ${{ secrets.CF_WORKER_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: python tools/publish_puzzles.py puzzles.json
+      - name: Commit refreshed data
+        run: |
+          cp -f puzzles.json data/puzzles.json || true
+          git config user.name "blitz-climb-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -A && git commit -m "weekly refresh $(date -u +%F)" || echo "no changes"
+          git push || echo "push skipped (no perms)"
