@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blitz Climb — jbensamo's Trainer</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232c; --ink:#e9edf2; --muted:#9aa7b4;
+    --line:#2a323d; --accent:#6ea8fe; --good:#57c98b; --warn:#e0b453; --bad:#e0736b; --chip:#222a34;
+    --lsq:#b9c4d0; --dsq:#6f7f92; --sel:#f4d35e; --hint:#8fd4a8; --last:#c9d67a;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f5f7f9; --panel:#fff; --panel2:#eef2f6; --ink:#141a20; --muted:#586472;
+      --line:#e0e6ec; --accent:#2f6fe0; --good:#1f9d57; --warn:#b5850f; --bad:#c6483d; --chip:#eef1f5;
+      --lsq:#eef1f6; --dsq:#94a6b8;}
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:70px}
+  .wrap{max-width:720px;margin:0 auto;padding:14px 12px}
+  h1{font-size:18px;margin:2px 0} h2{font-size:16px;margin:16px 0 8px} h3{font-size:14px;margin:12px 0 4px}
+  .kick{color:var(--accent);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+  .muted{color:var(--muted)} .small{font-size:12.5px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin:11px 0}
+  .row{display:flex;flex-wrap:wrap;gap:9px}
+  .stat{flex:1 1 120px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .stat b{display:block;font-size:21px;line-height:1.1} .stat span{color:var(--muted);font-size:11px}
+  .delta{font-size:12px;font-weight:700}.up{color:var(--good)}.down{color:var(--bad)}
+  button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:9px 12px}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#04122e;font-weight:700}
+  button.ghost{background:none}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.45}
+  input,textarea,select{font:inherit;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:8px 10px;width:100%}
+  label.fld{display:block;margin:8px 0 3px;font-size:12.5px;color:var(--muted)}
+  a{color:var(--accent)}
+  .prog{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+  .prog>i{display:block;height:100%;background:var(--accent)}
+  .pill{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:11px;color:var(--muted);margin:2px 4px 2px 0}
+  .tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;margin-left:6px}
+  .t-core{background:rgba(110,168,254,.18);color:var(--accent)} .t-2nd{background:rgba(224,180,83,.18);color:var(--warn)}
+  .item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line)}
+  .item:last-child{border-bottom:0}
+  .box{flex:0 0 22px;height:22px;border:2px solid var(--muted);border-radius:6px;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent}
+  .item.done .box{background:var(--good);border-color:var(--good);color:#042}
+  .item.done .t{text-decoration:line-through;color:var(--muted)}
+  .item .t{font-weight:600}.item .d{font-size:12.5px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+  th,td{border:1px solid var(--line);padding:6px 7px;text-align:left} th{background:var(--panel2)}
+  .note{border-left:3px solid var(--accent);background:var(--panel2);padding:8px 11px;border-radius:0 10px 10px 0;margin:10px 0;font-size:13px}
+  .note.warn{border-left-color:var(--warn)}.note.good{border-left-color:var(--good)}.note.bad{border-left-color:var(--bad)}
+  nav{position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 2px calc(6px + env(safe-area-inset-bottom))}
+  nav button{border:0;background:none;color:var(--muted);font-size:10.5px;padding:4px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:8px;min-width:56px}
+  nav button.active{color:var(--accent)} nav .ic{font-size:17px}
+  .tabpage{display:none}.tabpage.on{display:block}
+  svg{width:100%;height:auto;display:block}
+  .toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:var(--accent);color:#04122e;font-weight:700;padding:9px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+  .toast.show{opacity:1}
+  code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:12px}
+  /* board */
+  #board{width:min(92vw,440px);margin:6px auto;aspect-ratio:1/1;display:grid;
+    grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
+    border:1px solid var(--line);border-radius:8px;overflow:hidden;touch-action:manipulation}
+  .sq{position:relative;aspect-ratio:1/1;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;font-size:min(9vw,40px);line-height:1;user-select:none}
+  .sq.l{background:var(--lsq)} .sq.d{background:var(--dsq)}
+  .sq.sel::after{content:"";position:absolute;inset:0;background:var(--sel);opacity:.55}
+  .sq.hint::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 4px var(--hint)}
+  .sq.lastf::after,.sq.lastt::after{content:"";position:absolute;inset:0;background:var(--last);opacity:.35}
+  .sq .pc{position:relative;z-index:1}
+  .wp{color:#fff;text-shadow:0 0 1px #000,0 1px 2px rgba(0,0,0,.5)}
+  .bp{color:#141414;text-shadow:0 0 1px #000,0 1px 2px rgba(255,255,255,.25)}
+  #board.shake{animation:sh .32s}
+  @keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .btnrow button{flex:1 1 auto}
+  .statusbar{text-align:center;font-weight:700;min-height:22px;margin-top:6px}
+  .status-ok{color:var(--good)}.status-bad{color:var(--bad)}
+  .dots{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+  .dot{width:16px;height:16px;border-radius:5px;border:1px solid var(--line);background:var(--panel2);font-size:9px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer}
+  .dot.solved{background:var(--good);color:#042;border-color:var(--good)}
+  .dot.cur{outline:2px solid var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">Blitz Climb · Trainer</div>
+  <h1>jbensamo — 1750 → 1900</h1>
+
+  <!-- HOME -->
+  <section class="tabpage on" id="tab-home">
+    <div class="card"><h2 style="margin-top:2px">Where you stand</h2>
+      <div class="row" id="dashStats"></div>
+      <div style="margin-top:12px"><div class="small muted">Puzzles solved (from your own games)</div>
+        <div class="prog"><i id="progPuz" style="width:0%"></i></div><div class="small muted" id="progPuzTxt" style="margin-top:3px"></div></div>
+    </div>
+    <div class="card"><h2 style="margin-top:2px">ACPL trend</h2>
+      <div class="small muted">Lower = better. Dashed: baseline 55, target 42. Log a session after each engine re-analysis.</div>
+      <div id="chart"></div></div>
+    <div class="card"><h3 style="margin-top:2px">The one habit: C.C.T.</h3>
+      <div class="small muted">Before every move — even here in puzzles — scan your opponent's:</div>
+      <div id="cctList"></div></div>
+    <div class="card"><h3 style="margin-top:2px">This week's tactics streak</h3>
+      <div class="small muted">Solving ≥3 puzzles marks the day. Tap to toggle manually.</div>
+      <div class="dots" id="habitWeek"></div>
+      <div class="small" style="margin-top:8px">🔥 Streak: <b id="streak">0</b> days · Next check-in: <b id="nextChk">Sun</b></div></div>
+  </section>
+
+  <!-- TRAIN (puzzles) -->
+  <section class="tabpage" id="tab-train">
+    <div class="card" style="padding:12px">
+      <div class="small muted" id="puzMeta">Puzzle</div>
+      <div id="board"></div>
+      <div class="statusbar" id="status"></div>
+      <div class="btnrow">
+        <button id="pPrev" class="ghost">‹ Prev</button>
+        <button id="pHint" class="ghost">💡 Hint</button>
+        <button id="pSolve" class="ghost">Show solution</button>
+        <button id="pNext" class="primary">Next ›</button>
+      </div>
+      <div id="puzExplain" class="note good small" style="display:none"></div>
+      <div class="dots" id="puzDots"></div>
+      <div class="small muted" style="margin-top:8px">These are real positions from your blitz games where you had a winning move and missed it. Only the engine's move counts. Find it before you tap.</div>
+    </div>
+  </section>
+
+  <!-- PLAN -->
+  <section class="tabpage" id="tab-plan">
+    <div class="card"><h2 style="margin-top:2px">Weekly schedule</h2>
+      <div class="small muted">Resets every Monday. The Saturday slow game is where the C.C.T. reflex gets built.</div>
+      <div id="weeklyList"></div>
+      <div style="margin-top:8px"><div class="prog"><i id="progWeek" style="width:0%"></i></div><div class="small muted" id="progWeekTxt" style="margin-top:3px"></div></div></div>
+    <div class="card"><h2 style="margin-top:2px">Curriculum</h2>
+      <div class="small muted">Weighted to what the engine found. <span class="tag t-core">core</span> biggest lever · <span class="tag t-2nd">2nd front</span> endgames.</div>
+      <div id="workList"></div></div>
+  </section>
+
+  <!-- LOG -->
+  <section class="tabpage" id="tab-log">
+    <div class="card"><h2 style="margin-top:2px">Log an engine session</h2>
+      <div class="small muted">After a Stockfish re-analysis (yours or the Sunday check-in), enter the numbers.</div>
+      <label class="fld">Date</label><input type="date" id="logDate">
+      <div class="row"><div style="flex:1 1 110px"><label class="fld">ACPL</label><input type="number" id="logAcpl" placeholder="52"></div>
+        <div style="flex:1 1 110px"><label class="fld">Blunders/game</label><input type="number" step="0.01" id="logBlun" placeholder="0.55"></div></div>
+      <label class="fld">Note</label><textarea id="logNote" rows="2" placeholder="Optional"></textarea>
+      <button class="primary" id="addLog" style="width:100%;margin-top:10px">+ Add session</button></div>
+    <div class="card"><h3 style="margin-top:2px">History</h3><div id="logTable"></div></div>
+  </section>
+
+  <!-- SYNC -->
+  <section class="tabpage" id="tab-sync">
+    <div class="card"><h2 style="margin-top:2px">☁ Cloud sync (cross-device)</h2>
+      <div class="small muted">Progress saves to this app's own cloud store, so it follows you across phone and laptop and survives clearing your browser. No login — just a private sync code.</div>
+      <label class="fld">Sync code (leave blank to create one)</label><input id="syncCode" placeholder="auto-created on first connect">
+      <div class="btnrow"><button class="primary" id="btnCloud">Connect &amp; sync</button><button id="btnCloudOff" class="ghost">Disconnect</button></div>
+      <div class="small" id="cloudStatus" style="margin-top:8px">Not connected — saved on this device only.</div>
+      <div class="note small" style="margin-top:8px">On your other device: open the same URL, enter this sync code, tap Connect. Keep the code private — anyone with it can read your progress.</div>
+    </div>
+    <div class="card"><h2 style="margin-top:2px">Send progress to Claude</h2>
+      <div class="small muted">Progress saves on this device. Export and send it for a review or the Sunday check-in.</div>
+      <button class="primary" id="btnExport" style="width:100%;margin-top:10px">⬇ Export progress</button>
+      <textarea id="exportBox" rows="5" style="margin-top:10px;font-family:monospace;font-size:11px" readonly placeholder="Your progress code appears here."></textarea></div>
+    <div class="card"><h3 style="margin-top:2px">Pull your latest games</h3>
+      <div class="small muted">Open in a browser, save as <code>.pgn</code>, attach when you send progress:</div>
+      <div class="small" style="word-break:break-all;margin-top:6px"><a href="https://lichess.org/api/games/user/jbensamo?max=60&perfType=blitz&clocks=true&evals=true&opening=true" target="_blank">lichess.org/api/games/user/jbensamo?…perfType=blitz</a></div></div>
+    <div class="card"><h3 style="margin-top:2px">Restore / reset</h3>
+      <textarea id="importBox" rows="3" style="font-family:monospace;font-size:11px" placeholder="Paste exported JSON"></textarea>
+      <button id="btnImport" style="width:100%;margin-top:8px">↺ Import</button>
+      <button id="btnReset" style="width:100%;margin-top:8px;color:var(--bad)">Reset all progress</button></div>
+  </section>
+</div>
+
+<nav id="nav">
+  <button data-tab="home" class="active"><span class="ic">▚</span>Home</button>
+  <button data-tab="train"><span class="ic">♞</span>Train</button>
+  <button data-tab="plan"><span class="ic">▤</span>Plan</button>
+  <button data-tab="log"><span class="ic">📈</span>Log</button>
+  <button data-tab="sync"><span class="ic">⇅</span>Sync</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+let PUZZLES = /*PUZZLES*/[
+ {
+  "id": "p1",
+  "fen": "r1bq1rk1/5ppp/3p1bP1/2pN4/4PP2/1P2BQP1/1pP1B3/2KR3R w - - 0 21",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "c1d2",
+    "from": "c1",
+    "to": "d2",
+    "san": "Kd2",
+    "fen": "r1bq1rk1/5ppp/3p1bP1/2pN4/4PP2/1P2BQP1/1pPKB3/3R3R b - - 1 21",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Kb1",
+  "sourceUrl": "https://lichess.org/TlrKodp7",
+  "moveNo": 21,
+  "explain": "You played Kb1. The engine's Kd2 gains about +2.7."
+ },
+ {
+  "id": "p2",
+  "fen": "3r4/1p3k1p/3p1P2/2p5/2Nn4/7P/1r4P1/3R1RK1 w - - 1 26",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "c4b2",
+    "from": "c4",
+    "to": "b2",
+    "san": "Nxb2",
+    "fen": "3r4/1p3k1p/3p1P2/2p5/3n4/7P/1N4P1/3R1RK1 b - - 0 26",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "Rde1",
+  "sourceUrl": "https://lichess.org/AkzPEDRx",
+  "moveNo": 26,
+  "explain": "You played Rde1. The engine's Nxb2 gains about +4.8."
+ },
+ {
+  "id": "p3",
+  "fen": "r2qk2r/p3bppp/1p2p1b1/2ppn1B1/4PPB1/2PP4/PP1N1QPP/2KR2NR b kq - 0 14",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "e5d3",
+    "from": "e5",
+    "to": "d3",
+    "san": "Nxd3+",
+    "fen": "r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2Pn4/PP1N1QPP/2KR2NR w kq - 0 15",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "c1c2",
+    "from": "c1",
+    "to": "c2",
+    "san": "Kc2",
+    "fen": "r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2Pn4/PPKN1QPP/3R2NR b kq - 1 15",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "d3f2",
+    "from": "d3",
+    "to": "f2",
+    "san": "Nxf2",
+    "fen": "r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2P5/PPKN1nPP/3R2NR w kq - 0 16",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "Nxg4",
+  "sourceUrl": "https://lichess.org/fmb3X4RJ",
+  "moveNo": 14,
+  "explain": "You played Nxg4. The engine's Nxd3+ gains about +6.6."
+ },
+ {
+  "id": "p4",
+  "fen": "8/8/1p1p1R2/p5pp/2P1k3/PP6/2r3PP/3K4 w - - 0 35",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "d1c2",
+    "from": "d1",
+    "to": "c2",
+    "san": "Kxc2",
+    "fen": "8/8/1p1p1R2/p5pp/2P1k3/PP6/2K3PP/8 b - - 0 35",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "Rxd6",
+  "sourceUrl": "https://lichess.org/5ZaKAx7t",
+  "moveNo": 35,
+  "explain": "You played Rxd6. The engine's Kxc2 gains about +5.7."
+ },
+ {
+  "id": "p5",
+  "fen": "8/1n3k2/1B2b2p/p1p1Pp2/PPP2P2/1P1K3P/8/8 b - - 0 32",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "c5b4",
+    "from": "c5",
+    "to": "b4",
+    "san": "cxb4",
+    "fen": "8/1n3k2/1B2b2p/p3Pp2/PpP2P2/1P1K3P/8/8 w - - 0 33",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "axb4",
+  "sourceUrl": "https://lichess.org/SqTtPcmZ",
+  "moveNo": 32,
+  "explain": "You played axb4. The engine's cxb4 gains about +2.4."
+ },
+ {
+  "id": "p6",
+  "fen": "8/6pp/p4qk1/3b4/PPp5/2Pp2QP/6P1/4rNK1 b - - 5 36",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "f6g5",
+    "from": "f6",
+    "to": "g5",
+    "san": "Qg5",
+    "fen": "8/6pp/p5k1/3b2q1/PPp5/2Pp2QP/6P1/4rNK1 w - - 6 37",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Kh6",
+  "sourceUrl": "https://lichess.org/4Z4aLsuU",
+  "moveNo": 36,
+  "explain": "You played Kh6. The engine's Qg5 gains about +6.2."
+ },
+ {
+  "id": "p7",
+  "fen": "8/8/3p4/1p6/2k5/2P5/1K6/8 b - - 5 59",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "c4d3",
+    "from": "c4",
+    "to": "d3",
+    "san": "Kd3",
+    "fen": "8/8/3p4/1p6/8/2Pk4/1K6/8 w - - 6 60",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "b2b3",
+    "from": "b2",
+    "to": "b3",
+    "san": "Kb3",
+    "fen": "8/8/3p4/1p6/8/1KPk4/8/8 b - - 7 60",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "d6d5",
+    "from": "d6",
+    "to": "d5",
+    "san": "d5",
+    "fen": "8/8/8/1p1p4/8/1KPk4/8/8 w - - 0 61",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "d5",
+  "sourceUrl": "https://lichess.org/AKW6ZayR",
+  "moveNo": 59,
+  "explain": "You played d5. The engine's Kd3 gains about +9.7."
+ },
+ {
+  "id": "p8",
+  "fen": "6k1/R5p1/7p/7P/6P1/8/p4K2/r7 b - - 3 43",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "a1h1",
+    "from": "a1",
+    "to": "h1",
+    "san": "Rh1",
+    "fen": "6k1/R5p1/7p/7P/6P1/8/p4K2/7r w - - 4 44",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Kf8",
+  "sourceUrl": "https://lichess.org/mOokATB5",
+  "moveNo": 43,
+  "explain": "You played Kf8. The engine's Rh1 gains about +5.7."
+ },
+ {
+  "id": "p9",
+  "fen": "r4rk1/3q1pp1/pN1p4/1p6/2pnP1p1/P2P2P1/1PP4P/2R1QRK1 b - - 1 20",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "d7a7",
+    "from": "d7",
+    "to": "a7",
+    "san": "Qa7",
+    "fen": "r4rk1/q4pp1/pN1p4/1p6/2pnP1p1/P2P2P1/1PP4P/2R1QRK1 w - - 2 21",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Qe6",
+  "sourceUrl": "https://lichess.org/AKW6ZayR",
+  "moveNo": 20,
+  "explain": "You played Qe6. The engine's Qa7 gains about +4.0."
+ },
+ {
+  "id": "p10",
+  "fen": "r1b3k1/4rpbp/p1q1p1p1/1p2P1N1/N1B5/1P6/P3QPPP/R4RK1 w - - 0 18",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "c4d3",
+    "from": "c4",
+    "to": "d3",
+    "san": "Bd3",
+    "fen": "r1b3k1/4rpbp/p1q1p1p1/1p2P1N1/N7/1P1B4/P3QPPP/R4RK1 b - - 1 18",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "c8b7",
+    "from": "c8",
+    "to": "b7",
+    "san": "Bb7",
+    "fen": "r5k1/1b2rpbp/p1q1p1p1/1p2P1N1/N7/1P1B4/P3QPPP/R4RK1 w - - 2 19",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "d3e4",
+    "from": "d3",
+    "to": "e4",
+    "san": "Be4",
+    "fen": "r5k1/1b2rpbp/p1q1p1p1/1p2P1N1/N3B3/1P6/P3QPPP/R4RK1 b - - 3 19",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Rac1",
+  "sourceUrl": "https://lichess.org/Hj7jrZnr",
+  "moveNo": 18,
+  "explain": "You played Rac1. The engine's Bd3 gains about +4.7."
+ },
+ {
+  "id": "p11",
+  "fen": "6k1/4bp2/p2p4/Qp1PpP2/5qB1/7K/PP3PP1/8 b - - 4 29",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "f4h6",
+    "from": "f4",
+    "to": "h6",
+    "san": "Qh6+",
+    "fen": "6k1/4bp2/p2p3q/Qp1PpP2/6B1/7K/PP3PP1/8 w - - 5 30",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Forcing tactic",
+  "youPlayed": "Qxf2",
+  "sourceUrl": "https://lichess.org/umPVXsPd",
+  "moveNo": 29,
+  "explain": "You played Qxf2. The engine's Qh6+ gains about +6.0."
+ },
+ {
+  "id": "p12",
+  "fen": "r4rk1/1b2bppp/4p3/p7/1p2PB2/1P3N2/1PP2PPP/3RR1K1 w - - 0 17",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "d1d7",
+    "from": "d1",
+    "to": "d7",
+    "san": "Rd7",
+    "fen": "r4rk1/1b1Rbppp/4p3/p7/1p2PB2/1P3N2/1PP2PPP/4R1K1 b - - 1 17",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Nd2",
+  "sourceUrl": "https://lichess.org/1hM59Rp3",
+  "moveNo": 17,
+  "explain": "You played Nd2. The engine's Rd7 gains about +4.5."
+ },
+ {
+  "id": "p13",
+  "fen": "2r4r/1p1qkp1p/p2p1p2/4p3/PPP5/5P2/3Q1P1P/R1R3K1 b - - 2 20",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "d7h3",
+    "from": "d7",
+    "to": "h3",
+    "san": "Qh3",
+    "fen": "2r4r/1p2kp1p/p2p1p2/4p3/PPP5/5P1q/3Q1P1P/R1R3K1 w - - 3 21",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Rhg8+",
+  "sourceUrl": "https://lichess.org/6A2E3M4M",
+  "moveNo": 20,
+  "explain": "You played Rhg8+. The engine's Qh3 gains about +7.5."
+ },
+ {
+  "id": "p14",
+  "fen": "r3r1k1/pp2q1pp/3b4/1PpP1p2/2P1p3/1PN4P/4QPP1/4RRK1 b - - 1 20",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "e7e5",
+    "from": "e7",
+    "to": "e5",
+    "san": "Qe5",
+    "fen": "r3r1k1/pp4pp/3b4/1PpPqp2/2P1p3/1PN4P/4QPP1/4RRK1 w - - 2 21",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "f2f4",
+    "from": "f2",
+    "to": "f4",
+    "san": "f4",
+    "fen": "r3r1k1/pp4pp/3b4/1PpPqp2/2P1pP2/1PN4P/4Q1P1/4RRK1 b - f3 0 21",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "e5c3",
+    "from": "e5",
+    "to": "c3",
+    "san": "Qxc3",
+    "fen": "r3r1k1/pp4pp/3b4/1PpP1p2/2P1pP2/1Pq4P/4Q1P1/4RRK1 w - - 0 22",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Be5",
+  "sourceUrl": "https://lichess.org/t632fav9",
+  "moveNo": 20,
+  "explain": "You played Be5. The engine's Qe5 gains about +5.1."
+ },
+ {
+  "id": "p15",
+  "fen": "r4rk1/pp2qppp/3pb3/2p5/3nPNn1/2NP2P1/PPP3BP/R3QRK1 b - - 3 13",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "d4c2",
+    "from": "d4",
+    "to": "c2",
+    "san": "Nxc2",
+    "fen": "r4rk1/pp2qppp/3pb3/2p5/4PNn1/2NP2P1/PPn3BP/R3QRK1 w - - 0 14",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "a6",
+  "sourceUrl": "https://lichess.org/AKW6ZayR",
+  "moveNo": 13,
+  "explain": "You played a6. The engine's Nxc2 gains about +2.9."
+ },
+ {
+  "id": "p16",
+  "fen": "5rk1/2r1qppp/4p3/1p1bN3/p2P1Q2/P5P1/1P3P1P/2RR2K1 w - - 3 24",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "e5g6",
+    "from": "e5",
+    "to": "g6",
+    "san": "Ng6",
+    "fen": "5rk1/2r1qppp/4p1N1/1p1b4/p2P1Q2/P5P1/1P3P1P/2RR2K1 b - - 4 24",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Ng4",
+  "sourceUrl": "https://lichess.org/wMjEuKaT",
+  "moveNo": 24,
+  "explain": "You played Ng4. The engine's Ng6 gains about +2.1."
+ },
+ {
+  "id": "p17",
+  "fen": "2rq3r/1p2kp1p/p1bppp2/8/PP2P3/2P2N2/3Q1PPP/RR4K1 b - - 2 16",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "c6e4",
+    "from": "c6",
+    "to": "e4",
+    "san": "Bxe4",
+    "fen": "2rq3r/1p2kp1p/p2ppp2/8/PP2b3/2P2N2/3Q1PPP/RR4K1 w - - 0 17",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "b1e1",
+    "from": "b1",
+    "to": "e1",
+    "san": "Re1",
+    "fen": "2rq3r/1p2kp1p/p2ppp2/8/PP2b3/2P2N2/3Q1PPP/R3R1K1 b - - 1 17",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "e4f3",
+    "from": "e4",
+    "to": "f3",
+    "san": "Bxf3",
+    "fen": "2rq3r/1p2kp1p/p2ppp2/8/PP6/2P2b2/3Q1PPP/R3R1K1 w - - 0 18",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "e5",
+  "sourceUrl": "https://lichess.org/6A2E3M4M",
+  "moveNo": 16,
+  "explain": "You played e5. The engine's Bxe4 gains about +2.6."
+ },
+ {
+  "id": "p18",
+  "fen": "8/1r2p3/4k2P/8/2p5/5RB1/2r3p1/K5R1 w - - 1 58",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "h6h7",
+    "from": "h6",
+    "to": "h7",
+    "san": "h7",
+    "fen": "8/1r2p2P/4k3/8/2p5/5RB1/2r3p1/K5R1 b - - 0 58",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "c4c3",
+    "from": "c4",
+    "to": "c3",
+    "san": "c3",
+    "fen": "8/1r2p2P/4k3/8/8/2p2RB1/2r3p1/K5R1 w - - 0 59",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "f3f2",
+    "from": "f3",
+    "to": "f2",
+    "san": "Rf2",
+    "fen": "8/1r2p2P/4k3/8/8/2p3B1/2r2Rp1/K5R1 b - - 1 59",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Re3+",
+  "sourceUrl": "https://lichess.org/uKRxoCml",
+  "moveNo": 58,
+  "explain": "You played Re3+. The engine's h7 gains about +4.2."
+ }
+];
+const BASE={rating:1750,acpl:55,blunders:0.65}, TARGET={acpl:42,blunders:0.40};
+const CCT=["Checks — every check they have against you","Captures — everything they can take, free or via tactic","Threats — what they're setting up if you do nothing"];
+const WEEKLY=[
+  {id:"w_mon",day:"Mon",t:"Tactics (solve 5+ puzzles here) + 1 blitz game reviewed"},
+  {id:"w_tue",day:"Tue",t:"Calculation: solve puzzles writing the full line before moving"},
+  {id:"w_wed",day:"Wed",t:"Blitz session + review every loss for the losing move"},
+  {id:"w_thu",day:"Thu",t:"Annotated game (Chernev), one game"},
+  {id:"w_fri",day:"Fri",t:"Endgame essentials (Silman, one section)"},
+  {id:"w_sat",day:"Sat",t:"1–2 slow unrated games running the FULL C.C.T. check + deep review"},
+  {id:"w_sun",day:"Sun",t:"Re-run engine analysis, log it, export & send progress to Claude"}
+];
+const WORK=[
+  {id:"x_cct",cat:"Habit",tag:"core",t:"Make C.C.T. automatic",d:"Run it every move for 4 weeks. Kills the ~0.65 blunders/game."},
+  {id:"x_puz",cat:"Tactics",tag:"core",t:"Clear all your game-puzzles",d:"Solve every puzzle in the Train tab — they're your own missed wins."},
+  {id:"x_wood",cat:"Tactics",tag:"core",t:"Woodpecker Method cycle 1",d:"Repeat a tactic set to build recognition speed."},
+  {id:"x_endg",cat:"Endgames",tag:"2nd",t:"Silman: opposition, square rule, Lucena, Philidor",d:"26% of your blunders are endgames — make these automatic."},
+  {id:"x_chern",cat:"Strategy",tag:"",t:"Logical Chess: Move by Move (Chernev)",d:"Every move explained; builds middlegame plans."},
+  {id:"x_open",cat:"Openings",tag:"",t:"Lock a simple repertoire to move ~8",d:"Plans, not deep theory. Build a Lichess Study."}
+];
+
+const KEY="chessTrainer_v5";
+function load(){try{const s=localStorage.getItem(KEY);if(s)return JSON.parse(s);}catch(e){}return null;}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}scheduleCloud();}
+let STATE=load()||{version:5,player:"jbensamo",checks:{},habitDays:{},sessions:[],
+  puzzles:{solved:{},attempts:{},firstTry:{}},updated:null};
+STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};
+
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function todayISO(){return new Date().toISOString().slice(0,10);}
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1400);}
+function weekDates(){const d=new Date();const dd=(d.getDay()+6)%7;const mon=new Date(d);mon.setDate(d.getDate()-dd);
+  return [...Array(7)].map((_,i)=>{const x=new Date(mon);x.setDate(mon.getDate()+i);return x.toISOString().slice(0,10);});}
+function nextSunday(){const d=new Date();const a=(7-d.getDay())%7||7;d.setDate(d.getDate()+a);return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});}
+function wkPre(){return "WK"+weekDates()[0]+"_";}
+
+/* ---------- board ---------- */
+const GLY={K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘",P:"♙",k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"};
+function fenBoard(fen){ // -> {a1:'P',...}
+  const rows=fen.split(" ")[0].split("/");const m={};
+  for(let r=0;r<8;r++){let f=0;for(const c of rows[r]){if(/\d/.test(c))f+=+c;else{const sq="abcdefgh"[f]+(8-r);m[sq]=c;f++;}}}
+  return m;
+}
+function fenTurn(fen){return fen.split(" ")[1];}
+function pieceColorAt(fen,sq){const m=fenBoard(fen);const p=m[sq];return p?(p===p.toUpperCase()?"w":"b"):null;}
+function drawBoard(fen,orient,opts){
+  opts=opts||{};const m=fenBoard(fen);const files="abcdefgh".split("");const ranks=[8,7,6,5,4,3,2,1];
+  const rr=orient==="b"?ranks.slice().reverse():ranks;
+  const ff=orient==="b"?files.slice().reverse():files;
+  let html="";
+  for(const rank of rr){for(const file of ff){
+    const sq=file+rank;const dark=(("abcdefgh".indexOf(file)+rank)%2===0);
+    const p=m[sq];const glyph=p?`<span class="pc ${p===p.toUpperCase()?'wp':'bp'}">${GLY[p]}</span>`:"";
+    let cls="sq "+(dark?"d":"l");
+    if(opts.sel===sq)cls+=" sel";
+    if(opts.hint===sq)cls+=" hint";
+    if(opts.lastf===sq)cls+=" lastf";if(opts.lastt===sq)cls+=" lastt";
+    html+=`<div class="${cls}" data-sq="${sq}">${glyph}</div>`;
+  }}
+  $("#board").innerHTML=html;
+}
+
+/* ---------- puzzle engine ---------- */
+let cur={idx:0,ply:0,await:false,sel:null,fen:null,wrong:false,hint:null,done:false};
+function firstUnsolved(){for(let i=0;i<PUZZLES.length;i++)if(!STATE.puzzles.solved[PUZZLES[i].id])return i;return 0;}
+function loadPuzzle(i){
+  cur.idx=((i%PUZZLES.length)+PUZZLES.length)%PUZZLES.length;
+  const p=PUZZLES[cur.idx];
+  cur.ply=0;cur.sel=null;cur.wrong=false;cur.hint=null;cur.done=false;cur.fen=p.fen;cur.await=true;
+  $("#puzExplain").style.display="none";
+  $("#status").textContent=(p.sideToMove==="w"?"White":"Black")+" to move — "+p.motif;
+  $("#status").className="statusbar";
+  $("#pHint").disabled=false;$("#pSolve").disabled=false;
+  renderBoard();renderMeta();renderDots();
+}
+function renderBoard(){const p=PUZZLES[cur.idx];drawBoard(cur.fen,p.userColor,{sel:cur.sel,hint:cur.hint});}
+function renderMeta(){const p=PUZZLES[cur.idx];const sc=Object.keys(STATE.puzzles.solved).length;
+  $("#puzMeta").innerHTML=`Puzzle ${cur.idx+1}/${PUZZLES.length} · ${sc} solved · from <a href="${p.sourceUrl}" target="_blank">your game</a> (move ${p.moveNo})`;}
+function renderDots(){$("#puzDots").innerHTML=PUZZLES.map((p,i)=>`<div class="dot ${STATE.puzzles.solved[p.id]?'solved':''} ${i===cur.idx?'cur':''}" data-pi="${i}">${STATE.puzzles.solved[p.id]?'✓':i+1}</div>`).join("");}
+function boardClick(sq){
+  if(!cur.await||cur.done)return;const p=PUZZLES[cur.idx];const stm=fenTurn(cur.fen);
+  const pc=pieceColorAt(cur.fen,sq);
+  if(cur.sel===null){if(pc===stm){cur.sel=sq;renderBoard();}return;}
+  if(sq===cur.sel){cur.sel=null;renderBoard();return;}
+  if(pc===stm){cur.sel=sq;renderBoard();return;}
+  const exp=p.line[cur.ply];
+  if(cur.sel===exp.from&&sq===exp.to){correctMove();}
+  else{
+    cur.wrong=true;STATE.puzzles.attempts[p.id]=(STATE.puzzles.attempts[p.id]||0)+1;save();
+    cur.sel=null;renderBoard();
+    const b=$("#board");b.classList.remove("shake");void b.offsetWidth;b.classList.add("shake");
+    $("#status").textContent="Not the move — look again (C.C.T.).";$("#status").className="statusbar status-bad";
+  }
+}
+function correctMove(){
+  const p=PUZZLES[cur.idx];const exp=p.line[cur.ply];
+  cur.fen=exp.fen;cur.ply++;cur.sel=null;cur.hint=null;cur.await=false;renderBoard();
+  $("#status").textContent="✓ Correct";$("#status").className="statusbar status-ok";
+  if(cur.ply>=p.line.length){return solved();}
+  const nxt=p.line[cur.ply];
+  if(!nxt.user){setTimeout(()=>{cur.fen=nxt.fen;cur.ply++;renderBoard();
+    if(cur.ply>=p.line.length){solved();}else{cur.await=true;$("#status").textContent="Your move — keep going";$("#status").className="statusbar";}},520);}
+  else{cur.await=true;}
+}
+function solved(){
+  const p=PUZZLES[cur.idx];cur.done=true;cur.await=false;
+  const first=!STATE.puzzles.solved[p.id]&&!cur.wrong;
+  STATE.puzzles.solved[p.id]=true;if(first)STATE.puzzles.firstTry[p.id]=true;
+  // mark daily solve
+  const k=todayISO();STATE.puzzles.byDay=STATE.puzzles.byDay||{};STATE.puzzles.byDay[k]=(STATE.puzzles.byDay[k]||0)+1;
+  if(STATE.puzzles.byDay[k]>=3){STATE.habitDays[k]=STATE.habitDays[k]||{};STATE.habitDays[k].tactics=true;}
+  save();
+  $("#status").textContent=cur.wrong?"Solved 👍":"Solved first try! 🎯";$("#status").className="statusbar status-ok";
+  const ex=$("#puzExplain");ex.style.display="block";ex.className="note good small";
+  ex.innerHTML=`<b>${p.motif}.</b> ${p.explain} &nbsp;<a href="${p.sourceUrl}" target="_blank">See the game →</a>`;
+  renderDots();renderDash();
+  $("#pHint").disabled=true;$("#pSolve").disabled=true;
+}
+function showSolution(){
+  const p=PUZZLES[cur.idx];if(cur.done)return;cur.wrong=true;cur.await=false;cur.sel=null;cur.hint=null;
+  let i=cur.ply;
+  (function step(){if(i>=p.line.length){solved();return;}
+    cur.fen=p.line[i].fen;cur.ply=i+1;renderBoard();
+    $("#status").textContent="Solution: "+p.line[i].san;$("#status").className="statusbar";
+    i++;setTimeout(step,620);})();
+}
+function hint(){if(cur.done||!cur.await)return;cur.hint=PUZZLES[cur.idx].line[cur.ply].from;renderBoard();
+  $("#status").textContent="Move this piece.";$("#status").className="statusbar";}
+
+/* ---------- other tabs ---------- */
+function renderDash(){
+  const last=STATE.sessions[STATE.sessions.length-1];const acpl=last?last.acpl:BASE.acpl;const blun=last?last.blunders:BASE.blunders;
+  const dA=BASE.acpl-acpl,dB=BASE.blunders-blun;
+  $("#dashStats").innerHTML=`
+    <div class="stat"><b>${BASE.rating}</b><span>Blitz (baseline)</span></div>
+    <div class="stat"><b>${acpl}</b><span>ACPL <span class="delta ${dA>=0?'up':'down'}">${dA>=0?'▼':'▲'}${Math.abs(dA).toFixed(0)}</span></span></div>
+    <div class="stat"><b>${(+blun).toFixed(2)}</b><span>Blunders/g <span class="delta ${dB>=0?'up':'down'}">${dB>=0?'▼':'▲'}${Math.abs(dB).toFixed(2)}</span></span></div>
+    <div class="stat"><b>${TARGET.acpl}</b><span>Target → ~1900</span></div>`;
+  const sc=Object.keys(STATE.puzzles.solved).length;
+  $("#progPuz").style.width=Math.round(100*sc/PUZZLES.length)+"%";
+  $("#progPuzTxt").textContent=`${sc}/${PUZZLES.length} solved · ${Object.keys(STATE.puzzles.firstTry).length} first-try`;
+  let s=0,d=new Date();for(;;){const k=d.toISOString().slice(0,10);if(STATE.habitDays[k]&&STATE.habitDays[k].tactics){s++;d.setDate(d.getDate()-1);}else break;if(s>999)break;}
+  $("#streak").textContent=s;$("#nextChk").textContent=nextSunday();
+  renderChart();renderHabit();
+}
+function renderChart(){const S=STATE.sessions,W=680,H=180,pad=32;
+  const pts=[{acpl:BASE.acpl}].concat(S.map(x=>({acpl:+x.acpl})));
+  const maxA=Math.max(70,...pts.map(p=>p.acpl))+5,minA=Math.min(35,TARGET.acpl,...pts.map(p=>p.acpl))-5;
+  const X=i=>pad+i*(W-2*pad)/Math.max(1,pts.length-1),Y=v=>H-pad-(v-minA)*(H-2*pad)/(maxA-minA);
+  const line=pts.map((p,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(p.acpl).toFixed(1)}`).join(" ");
+  const dots=pts.map((p,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(p.acpl).toFixed(1)}" r="3.4" fill="var(--accent)"/>`).join("");
+  const ref=(v,c,t)=>`<line x1="${pad}" y1="${Y(v)}" x2="${W-pad}" y2="${Y(v)}" stroke="${c}" stroke-dasharray="4 4"/><text x="${W-pad}" y="${Y(v)-4}" fill="${c}" font-size="11" text-anchor="end">${t}</text>`;
+  $("#chart").innerHTML=S.length?`<svg viewBox="0 0 ${W} ${H}">${ref(BASE.acpl,'var(--warn)','base 55')}${ref(TARGET.acpl,'var(--good)','target 42')}<path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>${dots}</svg>`:`<div class="small muted" style="padding:12px 0">No sessions yet — add one in the Log tab after an engine re-analysis.</div>`;
+}
+function renderHabit(){const ds=weekDates(),nm=["M","T","W","T","F","S","S"],t=todayISO();
+  $("#habitWeek").innerHTML=ds.map((d,i)=>`<div class="dot ${(STATE.habitDays[d]&&STATE.habitDays[d].tactics)?'solved':''} ${d===t?'cur':''}" data-day="${d}">${(STATE.habitDays[d]&&STATE.habitDays[d].tactics)?'🔥':nm[i]}</div>`).join("");}
+function renderCCT(){$("#cctList").innerHTML=CCT.map((c,i)=>`<div class="item" style="padding:7px 0"><div class="box" style="border-color:var(--accent);color:var(--accent)">${i+1}</div><div class="t" style="font-weight:600">${c}</div></div>`).join("");}
+function renderChecklist(el,items,pre){$(el).innerHTML=items.map(it=>{const id=(pre||"")+it.id;const on=STATE.checks[id];
+  return `<div class="item ${on?'done':''}" data-check="${id}"><div class="box">✓</div><div><div class="t">${it.day?`<span class="pill">${it.day}</span>`:""}${it.t}${it.tag?`<span class="tag ${it.tag==='core'?'t-core':'t-2nd'}">${it.tag==='core'?'core':'2nd front'}</span>`:""}</div>${it.d?`<div class="d">${it.d}</div>`:""}</div></div>`;}).join("");}
+function renderWork(){let h="",c="";WORK.forEach(w=>{if(w.cat!==c){c=w.cat;h+=`<h3>${c}</h3>`;}const on=STATE.checks[w.id];
+  h+=`<div class="item ${on?'done':''}" data-check="${w.id}"><div class="box">✓</div><div><div class="t">${w.t}${w.tag?`<span class="tag ${w.tag==='core'?'t-core':'t-2nd'}">${w.tag==='core'?'core':'2nd front'}</span>`:""}</div><div class="d">${w.d}</div></div></div>`;});
+  $("#workList").innerHTML=h;}
+function renderWeekProg(){const done=WEEKLY.filter(w=>STATE.checks[wkPre()+w.id]).length;$("#progWeek").style.width=Math.round(100*done/WEEKLY.length)+"%";$("#progWeekTxt").textContent=`${done}/${WEEKLY.length} this week`;}
+function renderLog(){const S=STATE.sessions;$("#logTable").innerHTML=S.length?`<table><tr><th>Date</th><th>ACPL</th><th>Bl/g</th><th>Note</th></tr>${S.slice().reverse().map(x=>`<tr><td>${x.date}</td><td>${x.acpl}</td><td>${(+x.blunders).toFixed(2)}</td><td>${(x.note||'').replace(/</g,'&lt;')}</td></tr>`).join("")}</table>`:`<div class="small muted">No sessions yet.</div>`;if(!$("#logDate").value)$("#logDate").value=todayISO();}
+
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{
+  const tb=e.target.closest("nav button");
+  if(tb){const t=tb.dataset.tab;$$(".tabpage").forEach(p=>p.classList.remove("on"));$("#tab-"+t).classList.add("on");
+    $$("nav button").forEach(b=>b.classList.remove("active"));tb.classList.add("active");window.scrollTo(0,0);return;}
+  const sq=e.target.closest("#board .sq");if(sq){boardClick(sq.dataset.sq);return;}
+  const dot=e.target.closest("#puzDots .dot");if(dot){loadPuzzle(+dot.dataset.pi);return;}
+  if(e.target.id==="pNext"){loadPuzzle(cur.idx+1);return;}
+  if(e.target.id==="pPrev"){loadPuzzle(cur.idx-1);return;}
+  if(e.target.id==="pHint"){hint();return;}
+  if(e.target.id==="pSolve"){showSolution();return;}
+  const it=e.target.closest("[data-check]");if(it){const id=it.dataset.check;STATE.checks[id]=!STATE.checks[id];save();it.classList.toggle("done");renderWeekProg();return;}
+  const hd=e.target.closest("#habitWeek .dot");if(hd){const d=hd.dataset.day;STATE.habitDays[d]=STATE.habitDays[d]||{};STATE.habitDays[d].tactics=!STATE.habitDays[d].tactics;save();renderDash();return;}
+  if(e.target.id==="addLog"){addLog();return;}
+  if(e.target.id==="btnCloud"){connectCloud();return;}
+  if(e.target.id==="btnCloudOff"){disconnectCloud();return;}
+  if(e.target.id==="btnExport"){doExport();return;}
+  if(e.target.id==="btnImport"){doImport();return;}
+  if(e.target.id==="btnReset"){if(confirm(cloud.on?"Erase all progress everywhere (this also clears the cloud copy)?":"Erase all progress on this device?")){
+    STATE={version:5,player:"jbensamo",checks:{},habitDays:{},sessions:[],puzzles:{solved:{},attempts:{},firstTry:{}},updated:new Date().toISOString()};
+    try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e2){}
+    if(cloud.on){kvWrite().catch(()=>{}).finally(()=>location.reload());}else{location.reload();}
+  }return;}
+});
+function addLog(){const d=$("#logDate").value||todayISO();const a=parseFloat($("#logAcpl").value);
+  if(isNaN(a)){toast("Enter an ACPL");return;}
+  STATE.sessions.push({date:d,acpl:a,blunders:parseFloat($("#logBlun").value)||0,note:$("#logNote").value||""});
+  STATE.sessions.sort((x,y)=>x.date<y.date?-1:1);save();
+  $("#logAcpl").value=$("#logBlun").value=$("#logNote").value="";renderLog();renderDash();toast("Logged 📈");}
+function doExport(){STATE.updated=new Date().toISOString();const j=JSON.stringify(STATE,null,1);$("#exportBox").value=j;
+  try{const b=new Blob([j],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="chess-progress.json";a.click();URL.revokeObjectURL(u);}catch(e){}
+  try{$("#exportBox").select();document.execCommand("copy");}catch(e){}toast("Exported — send it to Claude");}
+function doImport(){try{const o=JSON.parse($("#importBox").value);if(!o.puzzles&&!o.checks)throw 0;STATE=Object.assign(STATE,o);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};save();renderAll();loadPuzzle(firstUnsolved());toast("Imported ✓");}catch(e){toast("Couldn't read that");}}
+
+/* ---------- cloud sync (Cloudflare KV via same-origin API) ---------- */
+const CKEY="chessTrainer_cloud",API="/api/state";
+let cloud=(()=>{try{return JSON.parse(localStorage.getItem(CKEY))||{};}catch(e){return {};}})();
+cloud.code=cloud.code||"";cloud.on=!!cloud.on;
+function saveCloud(){try{localStorage.setItem(CKEY,JSON.stringify({code:cloud.code,on:cloud.on}));}catch(e){}}
+function setCloudStatus(t){const e=$("#cloudStatus");if(e)e.textContent=t;}
+function renderCloud(){if($("#syncCode"))$("#syncCode").value=cloud.code||"";}
+function newCode(){return "xxxxxxxxxxxx".replace(/x/g,()=>Math.floor(Math.random()*36).toString(36));}
+async function kvRead(){const r=await fetch(API+"?u="+encodeURIComponent(cloud.code),{headers:{"Accept":"application/json"}});if(r.status===404)return null;if(!r.ok)throw new Error("read "+r.status);const t=await r.text();return t?JSON.parse(t):null;}
+async function kvWrite(){const r=await fetch(API+"?u="+encodeURIComponent(cloud.code),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(STATE)});if(!r.ok)throw new Error("write "+r.status);}
+function adoptRemote(r){Object.assign(STATE,r);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}}
+let pushT=null;
+function scheduleCloud(){if(!cloud.on)return;clearTimeout(pushT);pushT=setTimeout(async()=>{try{STATE.updated=new Date().toISOString();await kvWrite();setCloudStatus("Synced ✓ "+new Date().toLocaleTimeString());}catch(e){setCloudStatus("Sync error — kept locally, will retry on next change");}},1200);}
+async function connectCloud(){
+  cloud.code=(($("#syncCode").value||"").trim()||newCode()).toLowerCase().replace(/[^a-z0-9]/g,"");
+  if(cloud.code.length<6){setCloudStatus("Code must be 6+ letters/numbers");return;}
+  setCloudStatus("Connecting…");
+  try{const r=await kvRead();
+    if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);}
+    else{STATE.updated=new Date().toISOString();await kvWrite();}
+    cloud.on=true;saveCloud();renderCloud();renderAll();loadPuzzle(firstUnsolved());
+    setCloudStatus("Synced ✓ — your code is “"+cloud.code+"” (enter it on your other device)");toast("Cloud sync on");
+  }catch(e){cloud.on=false;setCloudStatus("Couldn't connect: "+e.message);}
+}
+function disconnectCloud(){cloud.on=false;saveCloud();setCloudStatus("Disconnected — saving to this device only.");}
+
+function renderAll(){renderDash();renderCCT();renderChecklist("#weeklyList",WEEKLY,wkPre());renderWork();renderWeekProg();renderLog();renderCloud();}
+renderAll();
+loadPuzzle(firstUnsolved());
+(async function cloudInit(){
+  if(cloud.on&&cloud.code){setCloudStatus("Reconnecting…");
+    try{const r=await kvRead();if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);renderAll();loadPuzzle(firstUnsolved());}
+      setCloudStatus("Synced ✓ (code “"+cloud.code+"”)");}catch(e){setCloudStatus("Offline — using local copy, will sync on next change");}}
+})();
+</script>
+</body>
+</html>

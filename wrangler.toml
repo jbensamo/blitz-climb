@@ -1,0 +1,8 @@
+name = "blitz-climb"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# The KV namespace id is filled in after the namespace is created.
+[[kv_namespaces]]
+binding = "PROGRESS"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
