@@ -150,11 +150,13 @@
   <!-- SYNC -->
   <section class="tabpage" id="tab-sync">
     <div class="card"><h2 style="margin-top:2px">☁ Cloud sync (cross-device)</h2>
-      <div class="small muted">Progress saves to this app's own cloud store, so it follows you across phone and laptop and survives clearing your browser. No login — just a private sync code.</div>
-      <label class="fld">Sync code (leave blank to create one)</label><input id="syncCode" placeholder="auto-created on first connect">
+      <div class="small muted">Progress saves to a <b>private GitHub Gist</b> in your own account, so it follows you across phone and laptop and survives clearing your browser. No server — the app talks to GitHub directly.</div>
+      <label class="fld">GitHub token (<code>gist</code> scope only)</label><input id="ghToken" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_…">
+      <label class="fld">Gist ID (leave blank on your first device — one is created for you)</label><input id="gistId" autocomplete="off" spellcheck="false" placeholder="created on first connect">
       <div class="btnrow"><button class="primary" id="btnCloud">Connect &amp; sync</button><button id="btnCloudOff" class="ghost">Disconnect</button></div>
       <div class="small" id="cloudStatus" style="margin-top:8px">Not connected — saved on this device only.</div>
-      <div class="note small" style="margin-top:8px">On your other device: open the same URL, enter this sync code, tap Connect. Keep the code private — anyone with it can read your progress.</div>
+      <div class="note small" style="margin-top:8px">On your other device: open the same URL, paste the <b>same token</b> plus the <b>Gist ID</b> shown above, tap Connect.<br><br>
+        The token stays in this browser's storage and is sent only to GitHub. Give it the <code>gist</code> scope and nothing else, and set an expiry: a <code>gist</code> token can read and write <b>all</b> your gists, and every site you publish under <code>jbensamo.github.io</code> shares this browser storage. Revoke it anytime at <code>github.com/settings/tokens</code>.</div>
     </div>
     <div class="card"><h2 style="margin-top:2px">Send progress to Claude</h2>
       <div class="small muted">Progress saves on this device. Export and send it for a review or the Sunday check-in.</div>
@@ -872,7 +874,7 @@ document.addEventListener("click",e=>{
   if(e.target.id==="btnReset"){if(confirm(cloud.on?"Erase all progress everywhere (this also clears the cloud copy)?":"Erase all progress on this device?")){
     STATE={version:5,player:"jbensamo",checks:{},habitDays:{},sessions:[],puzzles:{solved:{},attempts:{},firstTry:{}},updated:new Date().toISOString()};
     try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e2){}
-    if(cloud.on){kvWrite().catch(()=>{}).finally(()=>location.reload());}else{location.reload();}
+    if(cloud.on){gistWrite().catch(()=>{}).finally(()=>location.reload());}else{location.reload();}
   }return;}
 });
 function addLog(){const d=$("#logDate").value||todayISO();const a=parseFloat($("#logAcpl").value);
@@ -885,29 +887,66 @@ function doExport(){STATE.updated=new Date().toISOString();const j=JSON.stringif
   try{$("#exportBox").select();document.execCommand("copy");}catch(e){}toast("Exported — send it to Claude");}
 function doImport(){try{const o=JSON.parse($("#importBox").value);if(!o.puzzles&&!o.checks)throw 0;STATE=Object.assign(STATE,o);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};save();renderAll();loadPuzzle(firstUnsolved());toast("Imported ✓");}catch(e){toast("Couldn't read that");}}
 
-/* ---------- cloud sync (Cloudflare KV via same-origin API) ---------- */
-const CKEY="chessTrainer_cloud",API="/api/state";
+/* ---------- cloud sync (private GitHub Gist — no server of our own) ----------
+   The app talks to api.github.com directly (it sends CORS headers, so this works
+   from a static host like GitHub Pages). Progress lives in one private gist in
+   the owner's account; the token is entered per-device and never leaves the
+   browser except as an Authorization header to GitHub.                      */
+const CKEY="chessTrainer_cloud",GH="https://api.github.com",GFILE="blitz-climb-progress.json";
 let cloud=(()=>{try{return JSON.parse(localStorage.getItem(CKEY))||{};}catch(e){return {};}})();
-cloud.code=cloud.code||"";cloud.on=!!cloud.on;
-function saveCloud(){try{localStorage.setItem(CKEY,JSON.stringify({code:cloud.code,on:cloud.on}));}catch(e){}}
+// Legacy shape was {code,on} (Cloudflare KV). Without a token there's nothing to
+// reconnect with, so such a device starts out simply "not connected".
+cloud.token=cloud.token||"";cloud.gistId=cloud.gistId||"";cloud.on=!!cloud.on&&!!cloud.token;
+function saveCloud(){try{localStorage.setItem(CKEY,JSON.stringify({token:cloud.token,gistId:cloud.gistId,on:cloud.on}));}catch(e){}}
 function setCloudStatus(t){const e=$("#cloudStatus");if(e)e.textContent=t;}
-function renderCloud(){if($("#syncCode"))$("#syncCode").value=cloud.code||"";}
-function newCode(){return "xxxxxxxxxxxx".replace(/x/g,()=>Math.floor(Math.random()*36).toString(36));}
-async function kvRead(){const r=await fetch(API+"?u="+encodeURIComponent(cloud.code),{headers:{"Accept":"application/json"}});if(r.status===404)return null;if(!r.ok)throw new Error("read "+r.status);const t=await r.text();return t?JSON.parse(t):null;}
-async function kvWrite(){const r=await fetch(API+"?u="+encodeURIComponent(cloud.code),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(STATE)});if(!r.ok)throw new Error("write "+r.status);}
+function renderCloud(){if($("#ghToken"))$("#ghToken").value=cloud.token||"";if($("#gistId"))$("#gistId").value=cloud.gistId||"";}
+// Returns null on 404 (no such gist) so callers can treat "gone" as "make a new one".
+async function ghApi(path,opts){
+  const o=Object.assign({cache:"no-store"},opts||{});
+  o.headers=Object.assign({"Authorization":"Bearer "+cloud.token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"},o.headers||{});
+  const r=await fetch(GH+path,o);
+  if(r.status===401||r.status===403)throw new Error("GitHub rejected the token (needs the “gist” scope)");
+  if(r.status===404)return null;
+  if(!r.ok)throw new Error("GitHub error "+r.status);
+  return r.json();
+}
+async function gistRead(){
+  if(!cloud.gistId)return null;
+  const g=await ghApi("/gists/"+encodeURIComponent(cloud.gistId));
+  if(!g)return null;
+  const f=(g.files||{})[GFILE];if(!f)return null;
+  let txt=f.content;
+  if(f.truncated&&f.raw_url){txt=await (await fetch(f.raw_url,{cache:"no-store"})).text();}
+  try{return JSON.parse(txt);}catch(e){return null;}
+}
+async function gistWrite(){
+  const body={files:{}};body.files[GFILE]={content:JSON.stringify(STATE,null,1)};
+  const json={"Content-Type":"application/json"};
+  if(cloud.gistId){
+    const g=await ghApi("/gists/"+encodeURIComponent(cloud.gistId),{method:"PATCH",headers:json,body:JSON.stringify(body)});
+    if(g)return;
+    cloud.gistId="";   // deleted upstream — fall through and create a fresh one
+  }
+  body.public=false;body.description="Blitz Climb — training progress (private)";
+  const g=await ghApi("/gists",{method:"POST",headers:json,body:JSON.stringify(body)});
+  if(!g||!g.id)throw new Error("couldn't create the gist");
+  cloud.gistId=g.id;saveCloud();renderCloud();
+}
 function adoptRemote(r){Object.assign(STATE,r);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}}
 let pushT=null;
-function scheduleCloud(){if(!cloud.on)return;clearTimeout(pushT);pushT=setTimeout(async()=>{try{STATE.updated=new Date().toISOString();await kvWrite();setCloudStatus("Synced ✓ "+new Date().toLocaleTimeString());}catch(e){setCloudStatus("Sync error — kept locally, will retry on next change");}},1200);}
+function scheduleCloud(){if(!cloud.on)return;clearTimeout(pushT);pushT=setTimeout(async()=>{try{STATE.updated=new Date().toISOString();await gistWrite();setCloudStatus("Synced ✓ "+new Date().toLocaleTimeString());}catch(e){setCloudStatus("Sync error — kept locally, will retry on next change");}},1200);}
 async function connectCloud(){
-  cloud.code=(($("#syncCode").value||"").trim()||newCode()).toLowerCase().replace(/[^a-z0-9]/g,"");
-  if(cloud.code.length<6){setCloudStatus("Code must be 6+ letters/numbers");return;}
+  cloud.token=(($("#ghToken").value)||"").trim();
+  // Accept a bare id or a pasted gist URL.
+  cloud.gistId=(($("#gistId").value)||"").trim().replace(/\/$/,"").replace(/^.*\//,"");
+  if(!cloud.token){setCloudStatus("Paste a GitHub token that has the “gist” scope.");return;}
   setCloudStatus("Connecting…");
-  try{const r=await kvRead();
+  try{const r=await gistRead();
     if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);}
-    else{STATE.updated=new Date().toISOString();await kvWrite();}
+    else{STATE.updated=new Date().toISOString();await gistWrite();}
     cloud.on=true;saveCloud();renderCloud();renderAll();loadPuzzle(firstUnsolved());
-    setCloudStatus("Synced ✓ — your code is “"+cloud.code+"” (enter it on your other device)");toast("Cloud sync on");
-  }catch(e){cloud.on=false;setCloudStatus("Couldn't connect: "+e.message);}
+    setCloudStatus("Synced ✓ — Gist ID “"+cloud.gistId+"” (enter that, with the same token, on your other device)");toast("Cloud sync on");
+  }catch(e){cloud.on=false;saveCloud();setCloudStatus("Couldn't connect: "+e.message);}
 }
 function disconnectCloud(){cloud.on=false;saveCloud();setCloudStatus("Disconnected — saving to this device only.");}
 
@@ -916,9 +955,9 @@ function renderAll(){renderDash();renderCCT();renderChecklist("#weeklyList",WEEK
   // Puzzles: try a live set (/puzzles.json, refreshed by the weekly job); fall back to embedded.
   try{const r=await fetch("puzzles.json",{cache:"no-store"});if(r.ok){const a=await r.json();if(Array.isArray(a)&&a.length&&a[0].fen&&a[0].line)PUZZLES=a;}}catch(e){}
   renderAll();loadPuzzle(firstUnsolved());
-  if(cloud.on&&cloud.code){setCloudStatus("Reconnecting…");
-    try{const r=await kvRead();if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);renderAll();loadPuzzle(firstUnsolved());}
-      setCloudStatus("Synced ✓ (code “"+cloud.code+"”)");}catch(e){setCloudStatus("Offline — using local copy, will sync on next change");}}
+  if(cloud.on&&cloud.token){setCloudStatus("Reconnecting…");
+    try{const r=await gistRead();if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);renderAll();loadPuzzle(firstUnsolved());}
+      setCloudStatus("Synced ✓ (Gist “"+cloud.gistId+"”)");}catch(e){setCloudStatus("Offline — using local copy, will sync on next change");}}
 })();
 </script>
 </body>
