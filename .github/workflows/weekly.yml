@@ -6,6 +6,11 @@ on:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    # Job-level env so the publish step's `if:` can see it (a step's own `env:`
+    # block is NOT visible to that step's `if:` condition).
+    env:
+      CF_WORKER_URL: ${{ secrets.CF_WORKER_URL }}
+      ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -23,10 +28,7 @@ jobs:
       - name: Regenerate puzzles from newest blunders
         run: rm -f candidates.json && python tools/generate_puzzles.py data/games/blitz_latest.pgn jbensamo
       - name: Publish fresh puzzles to Cloudflare KV
-        if: ${{ env.CF_WORKER_URL != '' }}
-        env:
-          CF_WORKER_URL: ${{ secrets.CF_WORKER_URL }}
-          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        if: ${{ env.CF_WORKER_URL != '' && env.ADMIN_TOKEN != '' }}
         run: python tools/publish_puzzles.py puzzles.json
       - name: Commit refreshed data
         run: |

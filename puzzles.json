@@ -1,0 +1,506 @@
+[
+ {
+  "id": "p1",
+  "fen": "r1bq1rk1/5ppp/3p1bP1/2pN4/4PP2/1P2BQP1/1pP1B3/2KR3R w - - 0 21",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "c1d2",
+    "from": "c1",
+    "to": "d2",
+    "san": "Kd2",
+    "fen": "r1bq1rk1/5ppp/3p1bP1/2pN4/4PP2/1P2BQP1/1pPKB3/3R3R b - - 1 21",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Kb1",
+  "sourceUrl": "https://lichess.org/TlrKodp7",
+  "moveNo": 21,
+  "explain": "You played Kb1. The engine's Kd2 gains about +2.7."
+ },
+ {
+  "id": "p2",
+  "fen": "3r4/1p3k1p/3p1P2/2p5/2Nn4/7P/1r4P1/3R1RK1 w - - 1 26",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "c4b2",
+    "from": "c4",
+    "to": "b2",
+    "san": "Nxb2",
+    "fen": "3r4/1p3k1p/3p1P2/2p5/3n4/7P/1N4P1/3R1RK1 b - - 0 26",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "Rde1",
+  "sourceUrl": "https://lichess.org/AkzPEDRx",
+  "moveNo": 26,
+  "explain": "You played Rde1. The engine's Nxb2 gains about +4.8."
+ },
+ {
+  "id": "p3",
+  "fen": "r2qk2r/p3bppp/1p2p1b1/2ppn1B1/4PPB1/2PP4/PP1N1QPP/2KR2NR b kq - 0 14",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "e5d3",
+    "from": "e5",
+    "to": "d3",
+    "san": "Nxd3+",
+    "fen": "r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2Pn4/PP1N1QPP/2KR2NR w kq - 0 15",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "c1c2",
+    "from": "c1",
+    "to": "c2",
+    "san": "Kc2",
+    "fen": "r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2Pn4/PPKN1QPP/3R2NR b kq - 1 15",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "d3f2",
+    "from": "d3",
+    "to": "f2",
+    "san": "Nxf2",
+    "fen": "r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2P5/PPKN1nPP/3R2NR w kq - 0 16",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "Nxg4",
+  "sourceUrl": "https://lichess.org/fmb3X4RJ",
+  "moveNo": 14,
+  "explain": "You played Nxg4. The engine's Nxd3+ gains about +6.6."
+ },
+ {
+  "id": "p4",
+  "fen": "8/8/1p1p1R2/p5pp/2P1k3/PP6/2r3PP/3K4 w - - 0 35",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "d1c2",
+    "from": "d1",
+    "to": "c2",
+    "san": "Kxc2",
+    "fen": "8/8/1p1p1R2/p5pp/2P1k3/PP6/2K3PP/8 b - - 0 35",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "Rxd6",
+  "sourceUrl": "https://lichess.org/5ZaKAx7t",
+  "moveNo": 35,
+  "explain": "You played Rxd6. The engine's Kxc2 gains about +5.7."
+ },
+ {
+  "id": "p5",
+  "fen": "8/1n3k2/1B2b2p/p1p1Pp2/PPP2P2/1P1K3P/8/8 b - - 0 32",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "c5b4",
+    "from": "c5",
+    "to": "b4",
+    "san": "cxb4",
+    "fen": "8/1n3k2/1B2b2p/p3Pp2/PpP2P2/1P1K3P/8/8 w - - 0 33",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "axb4",
+  "sourceUrl": "https://lichess.org/SqTtPcmZ",
+  "moveNo": 32,
+  "explain": "You played axb4. The engine's cxb4 gains about +2.4."
+ },
+ {
+  "id": "p6",
+  "fen": "8/6pp/p4qk1/3b4/PPp5/2Pp2QP/6P1/4rNK1 b - - 5 36",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "f6g5",
+    "from": "f6",
+    "to": "g5",
+    "san": "Qg5",
+    "fen": "8/6pp/p5k1/3b2q1/PPp5/2Pp2QP/6P1/4rNK1 w - - 6 37",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Kh6",
+  "sourceUrl": "https://lichess.org/4Z4aLsuU",
+  "moveNo": 36,
+  "explain": "You played Kh6. The engine's Qg5 gains about +6.2."
+ },
+ {
+  "id": "p7",
+  "fen": "8/8/3p4/1p6/2k5/2P5/1K6/8 b - - 5 59",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "c4d3",
+    "from": "c4",
+    "to": "d3",
+    "san": "Kd3",
+    "fen": "8/8/3p4/1p6/8/2Pk4/1K6/8 w - - 6 60",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "b2b3",
+    "from": "b2",
+    "to": "b3",
+    "san": "Kb3",
+    "fen": "8/8/3p4/1p6/8/1KPk4/8/8 b - - 7 60",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "d6d5",
+    "from": "d6",
+    "to": "d5",
+    "san": "d5",
+    "fen": "8/8/8/1p1p4/8/1KPk4/8/8 w - - 0 61",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "d5",
+  "sourceUrl": "https://lichess.org/AKW6ZayR",
+  "moveNo": 59,
+  "explain": "You played d5. The engine's Kd3 gains about +9.7."
+ },
+ {
+  "id": "p8",
+  "fen": "6k1/R5p1/7p/7P/6P1/8/p4K2/r7 b - - 3 43",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "a1h1",
+    "from": "a1",
+    "to": "h1",
+    "san": "Rh1",
+    "fen": "6k1/R5p1/7p/7P/6P1/8/p4K2/7r w - - 4 44",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Kf8",
+  "sourceUrl": "https://lichess.org/mOokATB5",
+  "moveNo": 43,
+  "explain": "You played Kf8. The engine's Rh1 gains about +5.7."
+ },
+ {
+  "id": "p9",
+  "fen": "r4rk1/3q1pp1/pN1p4/1p6/2pnP1p1/P2P2P1/1PP4P/2R1QRK1 b - - 1 20",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "d7a7",
+    "from": "d7",
+    "to": "a7",
+    "san": "Qa7",
+    "fen": "r4rk1/q4pp1/pN1p4/1p6/2pnP1p1/P2P2P1/1PP4P/2R1QRK1 w - - 2 21",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Qe6",
+  "sourceUrl": "https://lichess.org/AKW6ZayR",
+  "moveNo": 20,
+  "explain": "You played Qe6. The engine's Qa7 gains about +4.0."
+ },
+ {
+  "id": "p10",
+  "fen": "r1b3k1/4rpbp/p1q1p1p1/1p2P1N1/N1B5/1P6/P3QPPP/R4RK1 w - - 0 18",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "c4d3",
+    "from": "c4",
+    "to": "d3",
+    "san": "Bd3",
+    "fen": "r1b3k1/4rpbp/p1q1p1p1/1p2P1N1/N7/1P1B4/P3QPPP/R4RK1 b - - 1 18",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "c8b7",
+    "from": "c8",
+    "to": "b7",
+    "san": "Bb7",
+    "fen": "r5k1/1b2rpbp/p1q1p1p1/1p2P1N1/N7/1P1B4/P3QPPP/R4RK1 w - - 2 19",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "d3e4",
+    "from": "d3",
+    "to": "e4",
+    "san": "Be4",
+    "fen": "r5k1/1b2rpbp/p1q1p1p1/1p2P1N1/N3B3/1P6/P3QPPP/R4RK1 b - - 3 19",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Rac1",
+  "sourceUrl": "https://lichess.org/Hj7jrZnr",
+  "moveNo": 18,
+  "explain": "You played Rac1. The engine's Bd3 gains about +4.7."
+ },
+ {
+  "id": "p11",
+  "fen": "6k1/4bp2/p2p4/Qp1PpP2/5qB1/7K/PP3PP1/8 b - - 4 29",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "f4h6",
+    "from": "f4",
+    "to": "h6",
+    "san": "Qh6+",
+    "fen": "6k1/4bp2/p2p3q/Qp1PpP2/6B1/7K/PP3PP1/8 w - - 5 30",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Forcing tactic",
+  "youPlayed": "Qxf2",
+  "sourceUrl": "https://lichess.org/umPVXsPd",
+  "moveNo": 29,
+  "explain": "You played Qxf2. The engine's Qh6+ gains about +6.0."
+ },
+ {
+  "id": "p12",
+  "fen": "r4rk1/1b2bppp/4p3/p7/1p2PB2/1P3N2/1PP2PPP/3RR1K1 w - - 0 17",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "d1d7",
+    "from": "d1",
+    "to": "d7",
+    "san": "Rd7",
+    "fen": "r4rk1/1b1Rbppp/4p3/p7/1p2PB2/1P3N2/1PP2PPP/4R1K1 b - - 1 17",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Nd2",
+  "sourceUrl": "https://lichess.org/1hM59Rp3",
+  "moveNo": 17,
+  "explain": "You played Nd2. The engine's Rd7 gains about +4.5."
+ },
+ {
+  "id": "p13",
+  "fen": "2r4r/1p1qkp1p/p2p1p2/4p3/PPP5/5P2/3Q1P1P/R1R3K1 b - - 2 20",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "d7h3",
+    "from": "d7",
+    "to": "h3",
+    "san": "Qh3",
+    "fen": "2r4r/1p2kp1p/p2p1p2/4p3/PPP5/5P1q/3Q1P1P/R1R3K1 w - - 3 21",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Rhg8+",
+  "sourceUrl": "https://lichess.org/6A2E3M4M",
+  "moveNo": 20,
+  "explain": "You played Rhg8+. The engine's Qh3 gains about +7.5."
+ },
+ {
+  "id": "p14",
+  "fen": "r3r1k1/pp2q1pp/3b4/1PpP1p2/2P1p3/1PN4P/4QPP1/4RRK1 b - - 1 20",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "e7e5",
+    "from": "e7",
+    "to": "e5",
+    "san": "Qe5",
+    "fen": "r3r1k1/pp4pp/3b4/1PpPqp2/2P1p3/1PN4P/4QPP1/4RRK1 w - - 2 21",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "f2f4",
+    "from": "f2",
+    "to": "f4",
+    "san": "f4",
+    "fen": "r3r1k1/pp4pp/3b4/1PpPqp2/2P1pP2/1PN4P/4Q1P1/4RRK1 b - f3 0 21",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "e5c3",
+    "from": "e5",
+    "to": "c3",
+    "san": "Qxc3",
+    "fen": "r3r1k1/pp4pp/3b4/1PpP1p2/2P1pP2/1Pq4P/4Q1P1/4RRK1 w - - 0 22",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Be5",
+  "sourceUrl": "https://lichess.org/t632fav9",
+  "moveNo": 20,
+  "explain": "You played Be5. The engine's Qe5 gains about +5.1."
+ },
+ {
+  "id": "p15",
+  "fen": "r4rk1/pp2qppp/3pb3/2p5/3nPNn1/2NP2P1/PPP3BP/R3QRK1 b - - 3 13",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "d4c2",
+    "from": "d4",
+    "to": "c2",
+    "san": "Nxc2",
+    "fen": "r4rk1/pp2qppp/3pb3/2p5/4PNn1/2NP2P1/PPn3BP/R3QRK1 w - - 0 14",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "a6",
+  "sourceUrl": "https://lichess.org/AKW6ZayR",
+  "moveNo": 13,
+  "explain": "You played a6. The engine's Nxc2 gains about +2.9."
+ },
+ {
+  "id": "p16",
+  "fen": "5rk1/2r1qppp/4p3/1p1bN3/p2P1Q2/P5P1/1P3P1P/2RR2K1 w - - 3 24",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "e5g6",
+    "from": "e5",
+    "to": "g6",
+    "san": "Ng6",
+    "fen": "5rk1/2r1qppp/4p1N1/1p1b4/p2P1Q2/P5P1/1P3P1P/2RR2K1 b - - 4 24",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Ng4",
+  "sourceUrl": "https://lichess.org/wMjEuKaT",
+  "moveNo": 24,
+  "explain": "You played Ng4. The engine's Ng6 gains about +2.1."
+ },
+ {
+  "id": "p17",
+  "fen": "2rq3r/1p2kp1p/p1bppp2/8/PP2P3/2P2N2/3Q1PPP/RR4K1 b - - 2 16",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "c6e4",
+    "from": "c6",
+    "to": "e4",
+    "san": "Bxe4",
+    "fen": "2rq3r/1p2kp1p/p2ppp2/8/PP2b3/2P2N2/3Q1PPP/RR4K1 w - - 0 17",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "b1e1",
+    "from": "b1",
+    "to": "e1",
+    "san": "Re1",
+    "fen": "2rq3r/1p2kp1p/p2ppp2/8/PP2b3/2P2N2/3Q1PPP/R3R1K1 b - - 1 17",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "e4f3",
+    "from": "e4",
+    "to": "f3",
+    "san": "Bxf3",
+    "fen": "2rq3r/1p2kp1p/p2ppp2/8/PP6/2P2b2/3Q1PPP/R3R1K1 w - - 0 18",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Win material",
+  "youPlayed": "e5",
+  "sourceUrl": "https://lichess.org/6A2E3M4M",
+  "moveNo": 16,
+  "explain": "You played e5. The engine's Bxe4 gains about +2.6."
+ },
+ {
+  "id": "p18",
+  "fen": "8/1r2p3/4k2P/8/2p5/5RB1/2r3p1/K5R1 w - - 1 58",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "h6h7",
+    "from": "h6",
+    "to": "h7",
+    "san": "h7",
+    "fen": "8/1r2p2P/4k3/8/2p5/5RB1/2r3p1/K5R1 b - - 0 58",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "c4c3",
+    "from": "c4",
+    "to": "c3",
+    "san": "c3",
+    "fen": "8/1r2p2P/4k3/8/8/2p2RB1/2r3p1/K5R1 w - - 0 59",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "f3f2",
+    "from": "f3",
+    "to": "f2",
+    "san": "Rf2",
+    "fen": "8/1r2p2P/4k3/8/8/2p3B1/2r2Rp1/K5R1 b - - 1 59",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "youPlayed": "Re3+",
+  "sourceUrl": "https://lichess.org/uKRxoCml",
+  "moveNo": 58,
+  "explain": "You played Re3+. The engine's h7 gains about +4.2."
+ }
+]
