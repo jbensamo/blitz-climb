@@ -8,13 +8,14 @@ GitHub org; use a personal account.
 ## What this is
 A single-page chess trainer that drills tactics generated from the owner's **own** games
 (engine-verified with Stockfish), tracks progress, and syncs it across devices through a
-**private GitHub Gist**. There is intentionally **no framework, no bundler, no database,
-and no server of our own** — it's one HTML file. Keep it that way. Do not "modernize"
-it into React/Next/etc.; that would be over-engineering for a single-user tool.
+**Supabase Postgres** database with emailed one-time-code auth. There is intentionally
+**no framework, no bundler, and no server of our own** — it's one HTML file that talks to
+Supabase's REST APIs directly (no SDK, no CDN script). Keep it that way. Do not
+"modernize" it into React/Next/etc.; that would be over-engineering for a single-user tool.
 
 **Deployed:** https://jbensamo.github.io/blitz-climb/ — GitHub Pages from `main` of the
-personal repo `jbensamo/blitz-climb`. Everything (hosting, sync, weekly refresh) runs on
-GitHub; there is no Cloudflare dependency. See `docs/SETUP-sync.md`.
+personal repo `jbensamo/blitz-climb`. Hosting and the weekly refresh run entirely on
+GitHub; only cross-device sync depends on Supabase. No Cloudflare. See `docs/SETUP-sync.md`.
 
 ## The owner's baseline (from Stockfish 16, 60 blitz games, Aug 2026)
 See `data/baseline.json`. Headline: **ACPL 55**, **0.65 blunders + 0.70 mistakes + 2.3
@@ -25,7 +26,7 @@ blunders → ~0.40/game. Keep the C.C.T. habit central in any changes.
 
 ## Repo layout
 ```
-index.html              The whole app (board, puzzles, plan, log, gist sync). Edit here.
+index.html              The whole app (board, puzzles, plan, log, sync). Edit here.
 puzzles.json            Root copy served by Pages; the app fetches it RELATIVELY. Keep at root.
 worker.js               Optional Cloudflare Worker (unused in prod). GENERATED from index.html.
 build.py                Re-inlines index.html into worker.js (run after editing index.html).
@@ -35,13 +36,15 @@ tools/
   generate_puzzles.py   Build engine-verified puzzles from a PGN. Writes ./puzzles.json.
   publish_puzzles.py    PUT a puzzles JSON to the Worker so /puzzles.json serves it.
   requirements.txt      Python deps (python-chess). Stockfish is a system binary.
+db/schema.sql           Supabase table + RLS policy. Paste into the SQL Editor.
+tools/verify_supabase.mjs  End-to-end sync check driving the app's own functions.
 data/
   puzzles.json          Current puzzle set (18, from the owner's blitz games).
   baseline.json         The diagnostic baseline + targets.
   games/                Seed PGNs: blitz_60.pgn, rapid_60.pgn (the analyzed samples).
 docs/
   plan.html             The engine-verified study plan (human-readable).
-  SETUP-sync.md         How hosting + cross-device gist sync are set up (the live setup).
+  SETUP-sync.md         How hosting + Supabase sync are set up (the live setup).
 .github/workflows/weekly.yml   Phase-2 automation (weekly Lichess pull -> analyze -> puzzles -> commit).
 ```
 
@@ -51,21 +54,30 @@ docs/
   serves the app under `/blitz-climb/`) and uses it if present, so the weekly job refreshes
   puzzles without touching the app.
 - **Sync** (cross-device): progress persists to localStorage (`chessTrainer_v5`) AND, if
-  sync is on, to a **private GitHub Gist** file `blitz-climb-progress.json`, via
-  `api.github.com` directly from the browser (GitHub sends CORS headers, so this works from
-  a static host — verified from the live origin). The gist copy is source of truth on load.
-  - Per-device config in localStorage `chessTrainer_cloud`: `{token, gistId, on}`. The
-    token is a **classic PAT with only the `gist` scope**, entered per device, never
-    committed and never in the served HTML. `Authorization: Bearer <token>` (classic and
-    fine-grained PATs both accept `Bearer`).
-  - No gist id yet -> `POST /gists` creates a private one; otherwise `PATCH /gists/{id}`.
-    A gist deleted upstream (404) is transparently recreated rather than erroring.
-  - Legacy devices may still hold the old `{code, on}` shape; without a token they simply
-    start out "not connected". Don't break that fallback.
-  - **Known edges** (measured, not guessed): gist reads can lag a write by up to ~2s
-    (replica lag — a cache-busting query param does NOT fix it; `cache:"no-store"` on the
-    GET is still required or the browser serves a `max-age=60` copy). Semantics are
-    last-write-wins with no merge — fine for one person switching devices.
+  signed in, to one row in **Supabase Postgres** (`public.progress`, `data jsonb`). The
+  remote copy wins on load when its `updated` is newer. Setup: `docs/SETUP-sync.md`;
+  schema: `db/schema.sql`.
+  - **No SDK.** The app calls the REST APIs directly so it stays one self-contained file:
+    `POST /auth/v1/otp` (send code) -> `POST /auth/v1/verify` with `type:"email"` (exchange
+    for a session) -> `POST /auth/v1/token?grant_type=refresh_token` (renew) and
+    `GET|POST /rest/v1/progress` for data. Upsert is `POST` with
+    `Prefer: resolution=merge-duplicates`.
+  - **Auth is a 6-digit emailed code, deliberately not a magic link** — a link tapped on a
+    phone opens in whichever browser owns the link, which is usually not the one you're
+    syncing. This requires `{{ .Token }}` in the Magic Link email template.
+  - `SB_URL` / `SB_ANON` are top-of-section constants and **are meant to be committed**.
+    The anon key is public by design; **RLS is the only thing protecting the data**, so
+    never disable it and never let a policy widen past `auth.uid() = user_id`.
+  - Per-device session in localStorage `chessTrainer_cloud`: `{email, uid, at, rt, exp, on}`.
+    Access tokens are short-lived and refreshed a minute before `exp`.
+  - Legacy devices may hold `{code, on}` (Cloudflare) or `{token, gistId, on}` (gist). Neither
+    carries a session, so they start out "not connected". Don't break that fallback.
+  - **`save()` sets `STATE.updated` on every local change** — not just on a successful cloud
+    write. This is load-bearing: if the timestamp only moved when sync was on, a device used
+    offline would carry a stale one and lose its progress to an empty device that signed in
+    first. Don't "optimize" it back into the write path.
+  - **Known edges:** last-write-wins with no merge; one OTP per minute, expiring in an hour;
+    free-tier projects pause after ~a week idle, which makes sync fail until un-paused.
 - **Worker** (`worker.js`): **not used in production** — kept so the app can also be hosted
   on Cloudflare if ever wanted. Routes: `GET /` -> app; `GET /puzzles.json` -> KV `puzzles`;
   `PUT /api/puzzles` (header `x-admin-token: $ADMIN_TOKEN`) -> sets it. `GET/PUT /api/state`
@@ -81,8 +93,9 @@ Hosting and sync are live. Full walkthrough in **`docs/SETUP-sync.md`**. In shor
 2. **Settings → Pages** → deploy from branch `main`, folder `/` → `https://jbensamo.github.io/blitz-climb/`.
 3. **Settings → Actions → General → Workflow permissions = Read and write** (else the
    weekly job can't commit refreshed puzzles; it fails silently on `git push`).
-4. Per device: **Sync** tab → paste a classic PAT with **only the `gist` scope**, leave
-   Gist ID blank on the first device, then reuse that token + the shown Gist ID elsewhere.
+4. Supabase project + `db/schema.sql` + `{{ .Token }}` in the Magic Link email template,
+   then `SB_URL`/`SB_ANON` filled into `index.html`. Full steps: `docs/SETUP-sync.md`.
+5. Per device: **Sync** tab → enter your email → type the 6-digit code it mails you.
    Deploying a change = `python build.py` + push to `main`.
 
 Prereqs for the *tools* only (not for hosting): Python 3.11+ and Stockfish
@@ -123,21 +136,21 @@ loop is inside GitHub, no Cloudflare needed.**
 - Puzzle: `{id, fen, sideToMove, userColor, line:[{uci,from,to,san,fen,user,promo}],
   motif, youPlayed, sourceUrl, moveNo, explain}`. Only the engine's move is accepted;
   `line` alternates user/opponent plies and each carries the resulting FEN.
-- Progress (gist file `blitz-climb-progress.json` / localStorage `chessTrainer_v5`):
+- Progress (`public.progress.data` jsonb / localStorage `chessTrainer_v5`):
   `{version, player, checks, habitDays, sessions:[{date,acpl,blunders,note}],
   puzzles:{solved,attempts,firstTry,byDay}, updated}`. `updated` (ISO string) is what
-  decides adopt-remote vs push-local, so always set it before a write.
+  decides adopt-remote vs push-local; `save()` refreshes it on every local change.
 
 ## Verifying changes
 - App: open the deployed URL; solve a puzzle; confirm it persists after reload.
-- Sync, without needing a token in a browser: the sync functions can be extracted from
-  `index.html` and run in Node against the live API (stub `$`, `localStorage`, `STATE`).
-  Covered that way already: create-private-gist, read-back, PATCH-reuses-same-gist,
-  second-device-read, deleted-upstream-recreates, bad-token-message. Allow up to ~2s of
-  replica lag before asserting a read reflects a write, or the test flakes.
-- CORS from a static host is real and was verified from `https://jbensamo.github.io`:
-  `POST /gists` and `PATCH /gists/{id}` with `Authorization` clear preflight (a readable
-  `401 Bad credentials` with a junk token is the proof — no token needed for this check).
+- Sync: `SB_EMAIL=<you> node tools/verify_supabase.mjs`. It extracts the shipped sync
+  functions from `index.html` and drives them against the live project, so it tests the
+  real code, not a copy. Covers anon-key-cannot-read (RLS), sign-in, write, read-back,
+  upsert-not-duplicate, second-device read, and token refresh. It emails ONE code and
+  waits for you to paste it — Supabase allows one per minute, so don't loop it.
+- The load-bearing check is the RLS one: `GET /rest/v1/progress` with only the anon key and
+  no user session must return `[]`. If it returns rows, the public key in the shipped HTML
+  is an open door and nothing else matters.
 - Worker logic (only if you revive it): import `worker.js` in Node with a fake
   `env.PROGRESS` (Map); `/`->HTML containing `id="board"`, `/puzzles.json`->404 until
   `/api/puzzles` PUT with the admin token.

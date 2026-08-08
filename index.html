@@ -151,13 +151,17 @@
   <!-- SYNC -->
   <section class="tabpage" id="tab-sync">
     <div class="card"><h2 style="margin-top:2px">☁ Cloud sync (cross-device)</h2>
-      <div class="small muted">Progress saves to a <b>private GitHub Gist</b> in your own account, so it follows you across phone and laptop and survives clearing your browser. No server — the app talks to GitHub directly.</div>
-      <label class="fld">GitHub token (<code>gist</code> scope only)</label><input id="ghToken" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_…">
-      <label class="fld">Gist ID (leave blank on your first device — one is created for you)</label><input id="gistId" autocomplete="off" spellcheck="false" placeholder="created on first connect">
-      <div class="btnrow"><button class="primary" id="btnCloud">Connect &amp; sync</button><button id="btnCloudOff" class="ghost">Disconnect</button></div>
+      <div class="small muted">Progress saves to your own row in a <b>private database</b>, so it follows you across phone and laptop and survives clearing your browser. Sign in with your email — we mail you a 6-digit code, there's no password to remember.</div>
+      <label class="fld">Your email</label><input id="sbEmail" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com">
+      <div class="btnrow"><button class="primary" id="btnCodeSend">✉ Email me a code</button><button id="btnCloudOff" class="ghost">Sign out</button></div>
+      <div id="codeRow" style="display:none">
+        <label class="fld">6-digit code from the email</label><input id="sbCode" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" placeholder="123456">
+        <button class="primary" id="btnCodeVerify" style="width:100%;margin-top:8px">Verify &amp; sync</button>
+      </div>
+      <div class="small" id="sbWho" style="margin-top:8px"></div>
       <div class="small" id="cloudStatus" style="margin-top:8px">Not connected — saved on this device only.</div>
-      <div class="note small" style="margin-top:8px">On your other device: open the same URL, paste the <b>same token</b> plus the <b>Gist ID</b> shown above, tap Connect.<br><br>
-        The token stays in this browser's storage and is sent only to GitHub. Give it the <code>gist</code> scope and nothing else, and set an expiry: a <code>gist</code> token can read and write <b>all</b> your gists, and every site you publish under <code>jbensamo.github.io</code> shares this browser storage. Revoke it anytime at <code>github.com/settings/tokens</code>.</div>
+      <div class="note small" style="margin-top:8px">On your other device: open the same URL, enter the <b>same email</b>, and type the code it mails you. Nothing to copy between devices.<br><br>
+        Sign in on the device that already has your progress <b>first</b> — whichever device syncs most recently wins, and there's no merge.</div>
     </div>
     <div class="card"><h2 style="margin-top:2px">Send progress to Claude</h2>
       <div class="small muted">Progress saves on this device. Export and send it for a review or the Sunday check-in.</div>
@@ -712,7 +716,11 @@ const WORK=[
 
 const KEY="chessTrainer_v5";
 function load(){try{const s=localStorage.getItem(KEY);if(s)return JSON.parse(s);}catch(e){}return null;}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}scheduleCloud();}
+// STATE.updated must advance on EVERY local change, not just on a successful cloud
+// write — it is what decides adopt-remote vs push-local. If it only moved when sync
+// was on, a device that had been used offline would carry a stale timestamp and lose
+// its progress to an empty device that signed in first.
+function save(){STATE.updated=new Date().toISOString();try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}scheduleCloud();}
 let STATE=load()||{version:5,player:"jbensamo",checks:{},habitDays:{},sessions:[],
   puzzles:{solved:{},attempts:{},firstTry:{}},updated:null};
 STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};
@@ -872,14 +880,15 @@ document.addEventListener("click",e=>{
   const it=e.target.closest("[data-check]");if(it){const id=it.dataset.check;STATE.checks[id]=!STATE.checks[id];save();it.classList.toggle("done");renderWeekProg();return;}
   const hd=e.target.closest("#habitWeek .dot");if(hd){const d=hd.dataset.day;STATE.habitDays[d]=STATE.habitDays[d]||{};STATE.habitDays[d].tactics=!STATE.habitDays[d].tactics;save();renderDash();return;}
   if(e.target.id==="addLog"){addLog();return;}
-  if(e.target.id==="btnCloud"){connectCloud();return;}
+  if(e.target.id==="btnCodeSend"){sendCode();return;}
+  if(e.target.id==="btnCodeVerify"){verifyCode();return;}
   if(e.target.id==="btnCloudOff"){disconnectCloud();return;}
   if(e.target.id==="btnExport"){doExport();return;}
   if(e.target.id==="btnImport"){doImport();return;}
   if(e.target.id==="btnReset"){if(confirm(cloud.on?"Erase all progress everywhere (this also clears the cloud copy)?":"Erase all progress on this device?")){
     STATE={version:5,player:"jbensamo",checks:{},habitDays:{},sessions:[],puzzles:{solved:{},attempts:{},firstTry:{}},updated:new Date().toISOString()};
     try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e2){}
-    if(cloud.on){gistWrite().catch(()=>{}).finally(()=>location.reload());}else{location.reload();}
+    if(cloud.on){dbWrite().catch(()=>{}).finally(()=>location.reload());}else{location.reload();}
   }return;}
 });
 function addLog(){const d=$("#logDate").value||todayISO();const a=parseFloat($("#logAcpl").value);
@@ -892,19 +901,29 @@ function doExport(){STATE.updated=new Date().toISOString();const j=JSON.stringif
   try{$("#exportBox").select();document.execCommand("copy");}catch(e){}toast("Exported — send it to Claude");}
 function doImport(){try{const o=JSON.parse($("#importBox").value);if(!o.puzzles&&!o.checks)throw 0;STATE=Object.assign(STATE,o);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};save();renderAll();loadPuzzle(firstUnsolved());toast("Imported ✓");}catch(e){toast("Couldn't read that");}}
 
-/* ---------- cloud sync (private GitHub Gist — no server of our own) ----------
-   The app talks to api.github.com directly (it sends CORS headers, so this works
-   from a static host like GitHub Pages). Progress lives in one private gist in
-   the owner's account; the token is entered per-device and never leaves the
-   browser except as an Authorization header to GitHub.                      */
-const CKEY="chessTrainer_cloud",GH="https://api.github.com",GFILE="blitz-climb-progress.json";
+/* ---------- cloud sync (Supabase: Postgres + email one-time-code auth) -------
+   Talks to the Supabase REST APIs directly — no SDK, no CDN script, so the app
+   stays one self-contained file. Sign-in is a 6-digit code emailed to you (not a
+   magic link: a link tapped on a phone opens in whichever browser owns the link,
+   which is usually NOT the browser you're syncing). Progress is one row in
+   public.progress, guarded by row-level security keyed to your auth user, so the
+   public anon key below can't read anyone's data without a signed-in session. */
+const SB_URL="";        // e.g. https://abcdefgh.supabase.co   (safe to commit)
+const SB_ANON="";       // the anon/publishable key            (safe to commit — RLS is what protects the data)
+const CKEY="chessTrainer_cloud";
 let cloud=(()=>{try{return JSON.parse(localStorage.getItem(CKEY))||{};}catch(e){return {};}})();
-// Legacy shape was {code,on} (Cloudflare KV). Without a token there's nothing to
-// reconnect with, so such a device starts out simply "not connected".
-cloud.token=cloud.token||"";cloud.gistId=cloud.gistId||"";cloud.on=!!cloud.on&&!!cloud.token;
-function saveCloud(){try{localStorage.setItem(CKEY,JSON.stringify({token:cloud.token,gistId:cloud.gistId,on:cloud.on}));}catch(e){}}
+// Older shapes: {code,on} (Cloudflare KV) and {token,gistId,on} (GitHub Gist).
+// Neither carries a Supabase session, so those devices simply start "not connected".
+cloud.email=cloud.email||"";cloud.uid=cloud.uid||"";cloud.at=cloud.at||"";cloud.rt=cloud.rt||"";
+cloud.exp=cloud.exp||0;cloud.on=!!cloud.on&&!!cloud.rt;
+function saveCloud(){try{localStorage.setItem(CKEY,JSON.stringify({email:cloud.email,uid:cloud.uid,at:cloud.at,rt:cloud.rt,exp:cloud.exp,on:cloud.on}));}catch(e){}}
+function sbConfigured(){return !!SB_URL&&!!SB_ANON;}
 function setCloudStatus(t){const e=$("#cloudStatus");if(e)e.textContent=t;}
-function renderCloud(){if($("#ghToken"))$("#ghToken").value=cloud.token||"";if($("#gistId"))$("#gistId").value=cloud.gistId||"";}
+function renderCloud(){
+  if($("#sbEmail"))$("#sbEmail").value=cloud.email||"";
+  const step2=$("#codeRow");if(step2)step2.style.display=cloud.email&&!cloud.on?"":"none";
+  const who=$("#sbWho");if(who)who.textContent=cloud.on?"Signed in as "+cloud.email:"";
+}
 /* Home-tab indicator: sync is opt-in and per-browser, so make "off" visible
    instead of only discoverable inside the Sync tab. */
 let syncState=cloud.on?"ok":"off";
@@ -917,55 +936,82 @@ function renderSyncPill(){
   e.textContent=v[0];e.style.color=v[1];e.style.borderColor=v[2];
   e.title=syncState==="off"?"Progress stays in this browser. Tap to set up cross-device sync.":"Tap to open the Sync tab.";
 }
-// Returns null on 404 (no such gist) so callers can treat "gone" as "make a new one".
-async function ghApi(path,opts){
+async function sbFetch(path,opts,auth){
   const o=Object.assign({cache:"no-store"},opts||{});
-  o.headers=Object.assign({"Authorization":"Bearer "+cloud.token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"},o.headers||{});
-  const r=await fetch(GH+path,o);
-  if(r.status===401||r.status===403)throw new Error("GitHub rejected the token (needs the “gist” scope)");
-  if(r.status===404)return null;
-  if(!r.ok)throw new Error("GitHub error "+r.status);
-  return r.json();
-}
-async function gistRead(){
-  if(!cloud.gistId)return null;
-  const g=await ghApi("/gists/"+encodeURIComponent(cloud.gistId));
-  if(!g)return null;
-  const f=(g.files||{})[GFILE];if(!f)return null;
-  let txt=f.content;
-  if(f.truncated&&f.raw_url){txt=await (await fetch(f.raw_url,{cache:"no-store"})).text();}
-  try{return JSON.parse(txt);}catch(e){return null;}
-}
-async function gistWrite(){
-  const body={files:{}};body.files[GFILE]={content:JSON.stringify(STATE,null,1)};
-  const json={"Content-Type":"application/json"};
-  if(cloud.gistId){
-    const g=await ghApi("/gists/"+encodeURIComponent(cloud.gistId),{method:"PATCH",headers:json,body:JSON.stringify(body)});
-    if(g)return;
-    cloud.gistId="";   // deleted upstream — fall through and create a fresh one
+  o.headers=Object.assign({"apikey":SB_ANON,"Content-Type":"application/json"},
+                          auth?{"Authorization":"Bearer "+cloud.at}:{},o.headers||{});
+  const r=await fetch(SB_URL.replace(/\/$/,"")+path,o);
+  const txt=await r.text();
+  let body=null;try{body=txt?JSON.parse(txt):null;}catch(e){}
+  if(!r.ok){
+    const msg=(body&&(body.msg||body.error_description||body.message||body.error))||("HTTP "+r.status);
+    const e=new Error(msg);e.status=r.status;throw e;
   }
-  body.public=false;body.description="Blitz Climb — training progress (private)";
-  const g=await ghApi("/gists",{method:"POST",headers:json,body:JSON.stringify(body)});
-  if(!g||!g.id)throw new Error("couldn't create the gist");
-  cloud.gistId=g.id;saveCloud();renderCloud();
+  return body;
+}
+function storeSession(s){
+  if(!s||!s.access_token)throw new Error("no session returned");
+  cloud.at=s.access_token;cloud.rt=s.refresh_token||cloud.rt;
+  cloud.exp=Date.now()+((s.expires_in||3600)*1000);
+  if(s.user&&s.user.id)cloud.uid=s.user.id;
+  saveCloud();
+}
+// Access tokens are short-lived; refresh a minute before expiry.
+async function sbSession(){
+  if(!cloud.rt)throw new Error("not signed in");
+  if(cloud.at&&Date.now()<cloud.exp-60000)return;
+  storeSession(await sbFetch("/auth/v1/token?grant_type=refresh_token",
+    {method:"POST",body:JSON.stringify({refresh_token:cloud.rt})}));
+}
+async function sbSendCode(email){
+  await sbFetch("/auth/v1/otp",{method:"POST",body:JSON.stringify({email:email,create_user:true})});
+}
+async function sbVerifyCode(email,code){
+  storeSession(await sbFetch("/auth/v1/verify",
+    {method:"POST",body:JSON.stringify({email:email,token:code,type:"email"})}));
+}
+// RLS restricts this to the signed-in user's own row, so no filter is needed.
+async function dbRead(){
+  await sbSession();
+  const rows=await sbFetch("/rest/v1/progress?select=data&limit=1",{},true);
+  return rows&&rows.length?rows[0].data:null;
+}
+async function dbWrite(){
+  await sbSession();
+  await sbFetch("/rest/v1/progress",{method:"POST",
+    headers:{"Prefer":"resolution=merge-duplicates,return=minimal"},
+    body:JSON.stringify({user_id:cloud.uid,data:STATE,updated_at:new Date().toISOString()})},true);
 }
 function adoptRemote(r){Object.assign(STATE,r);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}}
 let pushT=null;
-function scheduleCloud(){if(!cloud.on)return;clearTimeout(pushT);pushT=setTimeout(async()=>{try{STATE.updated=new Date().toISOString();await gistWrite();setCloudStatus("Synced ✓ "+new Date().toLocaleTimeString());setSyncState("ok");}catch(e){setCloudStatus("Sync error — kept locally, will retry on next change");setSyncState("err");}},1200);}
-async function connectCloud(){
-  cloud.token=(($("#ghToken").value)||"").trim();
-  // Accept a bare id or a pasted gist URL.
-  cloud.gistId=(($("#gistId").value)||"").trim().replace(/\/$/,"").replace(/^.*\//,"");
-  if(!cloud.token){setCloudStatus("Paste a GitHub token that has the “gist” scope.");return;}
-  setCloudStatus("Connecting…");
-  try{const r=await gistRead();
-    if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);}
-    else{STATE.updated=new Date().toISOString();await gistWrite();}
-    cloud.on=true;saveCloud();renderCloud();renderAll();loadPuzzle(firstUnsolved());setSyncState("ok");
-    setCloudStatus("Synced ✓ — Gist ID “"+cloud.gistId+"” (enter that, with the same token, on your other device)");toast("Cloud sync on");
-  }catch(e){cloud.on=false;saveCloud();setSyncState("off");setCloudStatus("Couldn't connect: "+e.message);}
+function scheduleCloud(){if(!cloud.on)return;clearTimeout(pushT);pushT=setTimeout(async()=>{try{await dbWrite();setCloudStatus("Synced ✓ "+new Date().toLocaleTimeString());setSyncState("ok");}catch(e){setCloudStatus("Sync error — kept locally, will retry on next change");setSyncState("err");}},1200);}
+// Step 1: email a 6-digit code.
+async function sendCode(){
+  if(!sbConfigured()){setCloudStatus("Sync isn't configured in this build (SB_URL / SB_ANON are empty).");return;}
+  const email=(($("#sbEmail").value)||"").trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){setCloudStatus("Enter a valid email address.");return;}
+  cloud.email=email;saveCloud();
+  setCloudStatus("Sending a code to "+email+"…");
+  try{await sbSendCode(email);renderCloud();
+    setCloudStatus("Code sent to "+email+" — enter it below. (One code per minute; it expires in an hour.)");
+  }catch(e){setCloudStatus("Couldn't send the code: "+e.message);}
 }
-function disconnectCloud(){cloud.on=false;saveCloud();setSyncState("off");setCloudStatus("Disconnected — saving to this device only.");}
+// Step 2: verify it, then reconcile local vs remote by `updated`.
+async function verifyCode(){
+  const code=(($("#sbCode").value)||"").trim().replace(/\s/g,"");
+  if(!code){setCloudStatus("Enter the 6-digit code from the email.");return;}
+  setCloudStatus("Verifying…");
+  try{
+    await sbVerifyCode(cloud.email,code);
+    const r=await dbRead();
+    if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);}
+    else{await dbWrite();}
+    cloud.on=true;saveCloud();$("#sbCode").value="";
+    renderCloud();renderAll();loadPuzzle(firstUnsolved());setSyncState("ok");
+    setCloudStatus("Synced ✓ — signed in as "+cloud.email+". Sign in with the same email on your other device.");toast("Cloud sync on");
+  }catch(e){cloud.on=false;saveCloud();setSyncState("off");setCloudStatus("Couldn't verify: "+e.message);}
+}
+function disconnectCloud(){cloud.on=false;cloud.at="";cloud.rt="";cloud.exp=0;saveCloud();renderCloud();setSyncState("off");setCloudStatus("Signed out — saving to this device only.");}
 
 function renderAll(){renderDash();renderCCT();renderChecklist("#weeklyList",WEEKLY,wkPre());renderWork();renderWeekProg();renderLog();renderCloud();renderSyncPill();}
 (async function boot(){
@@ -973,8 +1019,8 @@ function renderAll(){renderDash();renderCCT();renderChecklist("#weeklyList",WEEK
   try{const r=await fetch("puzzles.json",{cache:"no-store"});if(r.ok){const a=await r.json();if(Array.isArray(a)&&a.length&&a[0].fen&&a[0].line)PUZZLES=a;}}catch(e){}
   renderAll();loadPuzzle(firstUnsolved());
   if(cloud.on&&cloud.token){setCloudStatus("Reconnecting…");
-    try{const r=await gistRead();if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);renderAll();loadPuzzle(firstUnsolved());}
-      setSyncState("ok");setCloudStatus("Synced ✓ (Gist “"+cloud.gistId+"”)");}
+    try{const r=await dbRead();if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);renderAll();loadPuzzle(firstUnsolved());}
+      setSyncState("ok");setCloudStatus("Synced ✓ — signed in as "+cloud.email);}
     catch(e){setSyncState("err");setCloudStatus("Offline — using local copy, will sync on next change");}}
 })();
 </script>

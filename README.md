@@ -2,24 +2,25 @@
 
 A personal chess trainer for **jbensamo** (~1750 Lichess blitz -> 1900). It drills tactics
 built from your **own** games (engine-verified with Stockfish), tracks your progress, and
-syncs across devices — all on GitHub, no server, no database, no framework.
+syncs across devices — static hosting on GitHub Pages, a small Supabase table for sync,
+no server of its own and no framework.
 
 ### ▶ https://jbensamo.github.io/blitz-climb/
 
 **Open this in Claude Code and read `CLAUDE.md` — it has the full setup.**
 
 ## Cross-device sync
-Progress lives in a **private GitHub Gist** in your own account; the page talks to
-`api.github.com` directly, so no backend is needed.
+Progress lives in your own row of a **private Supabase Postgres** database, protected by
+row-level security. Sign-in is a 6-digit code emailed to you — no password, and nothing to
+copy between devices.
 
-1. Make a classic token at github.com/settings/tokens with **only the `gist` scope**.
-2. App -> **Sync** tab -> paste the token, leave *Gist ID* blank -> **Connect & sync**.
-   It creates the gist and shows its ID.
-3. On your other device: same token + that Gist ID -> **Connect & sync**.
+1. App -> **Sync** tab -> enter your email -> **Email me a code**.
+2. Type the 6-digit code -> **Verify & sync**. The Home pill turns green.
+3. Same email on your other device. That's it.
 
-The token stays in that browser's local storage and is only ever sent to GitHub. It can
-read/write all your gists, so scope it to `gist` alone and set an expiry — details and
-caveats in `docs/SETUP-sync.md`. Prefer no token? Sync off + **Export/Import** still works.
+Sign in first on the device that already has your progress — sync is last-write-wins with
+no merge. One-time project setup and the known edges are in `docs/SETUP-sync.md`. Prefer no
+account at all? Leave sync off; **Export/Import** still works.
 
 ## What's inside
 - `index.html` — the whole app (playable board, puzzles, weekly plan, progress log, sync).
@@ -28,7 +29,8 @@ caveats in `docs/SETUP-sync.md`. Prefer no token? Sync off + **Export/Import** s
 - `tools/` — Stockfish analysis + puzzle generation from your PGNs.
 - `data/` — current puzzles, your baseline, and the analyzed game samples.
 - `docs/plan.html` — your engine-verified study plan.
-- `docs/SETUP-sync.md` — how hosting + gist sync are wired, and the known edges.
+- `docs/SETUP-sync.md` — how hosting + Supabase sync are wired, and the known edges.
+- `db/schema.sql` — the progress table and its row-level-security policy.
 - `.github/workflows/weekly.yml` — weekly job that re-analyzes your latest Lichess games
   and commits a fresh puzzle set; Pages redeploys and the app picks it up.
 
