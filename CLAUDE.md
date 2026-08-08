@@ -49,6 +49,20 @@ docs/
 ```
 
 ## Architecture notes
+- **Two kinds of module.** The list shows "From your own games" (built from his Lichess
+  blunders — the irreplaceable part, keep it first) and "Graded curriculum" (648 puzzles
+  from the Lichess CC0 database, rated 1600-2400). Provenance, filters and the legal
+  reasoning are in `data/CORPUS.md`; **don't import exercises from books** — those are
+  copyrighted selections and this repo is public.
+- **Corpus modules are lazy.** `puzzles/index.json` is a manifest (name, blurb, id prefix,
+  count, rating range, file); the app fetches it at boot so the list can show real counts
+  and progress, and downloads `puzzles/<key>.json` only when a module is opened. 648
+  puzzles is ~630KB — far too much for the page, and `build.py` embeds everything it finds
+  in `data/puzzles.json`, so corpus puzzles must NEVER be merged in there.
+  - `modStats()` uses the manifest count plus an id-prefix scan of solved ids for a module
+    that isn't downloaded yet, so counts don't lie before the fetch.
+  - `renderDash()` totals across ALL modules (manifest included), not `PUZZLES.length`, or
+    the headline would jump every time a module is opened.
 - **Train tab = module list -> trainer.** `MODULES` declares every trainable part of the
   plan; each has a `cat` (matching the puzzle's `cat`) and a `kind`:
   - `kind:"line"` — the classic trainer: play the engine's move(s) from `line[]`. Used by
@@ -161,6 +175,11 @@ loop is inside GitHub, no Cloudflare needed.**
   replays the leading opponent plies into the starting FEN instead. Replay-verify new
   generators (legal moves, SAN and FEN consistency, first/last ply `user:true`) before
   merging; that check is what caught it.
+- Rebuild the graded curriculum: download the dump to `build/corpus/` (gitignored) then
+  `zstd -dc build/corpus/lichess_db_puzzle.csv.zst | python3 tools/build_corpus.py`. It
+  early-exits once every (theme, rating-band) bucket is full — ~82k of 5M rows was enough.
+  **The CSV's `FEN` is the position BEFORE the opponent's setup move and `Moves[0]` IS that
+  move**; the solver plays `Moves[1]`. Replay-verify after building.
 - Rebuild ALL puzzle sets: `bash tools/build_sets.sh` (~6 min; writes `build/sets/*.json`,
   which is gitignored). It drives `generate_puzzles.py` several times via env vars —
   `OUT`, `CACHE`, `ID_PREFIX`, `CAT`, `PHASE_ONLY`, `MAX_PUZZLES`, `WALL`, `ENGINE`.
@@ -195,8 +214,9 @@ loop is inside GitHub, no Cloudflare needed.**
   - **Ids must be globally unique across sets** — progress is keyed by id alone
     (`STATE.puzzles.solved[id]`). Prefixes in use: `p` (blitz tactics), `r` (rapid
     tactics), `eb`/`er` (blitz/rapid endgames), `sb`/`sr` (strategy), `c` (C.C.T.),
-    `et` (endgame theory), `o` (openings), and `t<yymmdd>_`/`e<yymmdd>_` from the weekly
-    job. Reusing a prefix silently marks new puzzles as already solved.
+    `et` (endgame theory), `o` (openings), `L<modkey>` (Lichess corpus, e.g. `Lrookend`),
+    and `t<yymmdd>_`/`e<yymmdd>_` from the weekly job. Reusing a prefix silently marks new
+    puzzles as already solved.
   - `merge_sets.py` only DERIVES `cat` for legacy items that lack one. It used to
     re-derive every run, which clobbered explicit cats (strategy/cct/opening) back to
     "tactics" on the second merge and silently emptied those modules.

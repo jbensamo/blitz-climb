@@ -318,9 +318,54 @@ const MODULES=[
   blurb:"Your own most-played openings, engine-checked, to about move 8."}
 ];
 let CURMOD=null,ACTIVE=[];
+/* Corpus modules come from puzzles/index.json (built from the Lichess CC0 database)
+   and are fetched only when opened — 648 puzzles is ~630KB, far too much to ship in
+   the page. The manifest carries each module's size and id prefix, so the list can
+   show real counts and progress before anything is downloaded. */
+async function loadManifest(){
+  try{
+    const r=await fetch("puzzles/index.json",{cache:"no-store"});
+    if(!r.ok)return;
+    const man=await r.json();
+    man.forEach(m=>{
+      const icon=[...m.name][0], name=m.name.slice(icon.length).trim();
+      MODULES.push({id:m.id,cat:m.cat,kind:"line",icon:icon,name:name,blurb:m.blurb,
+                    file:m.file,prefix:m.prefix,n:m.n,ratingLo:m.ratingLo,ratingHi:m.ratingHi,
+                    lazy:true,loaded:false});
+    });
+  }catch(e){}
+}
+async function ensureLoaded(m){
+  if(!m.lazy||m.loaded)return true;
+  try{
+    const r=await fetch(m.file,{cache:"force-cache"});
+    if(!r.ok)throw new Error(r.status);
+    const items=await r.json();
+    items.forEach(p=>{p.cat=m.cat;});          // cat lives in the manifest, not per item
+    PUZZLES=PUZZLES.concat(items);m.loaded=true;return true;
+  }catch(e){return false;}
+}
 function modOf(id){return MODULES.find(m=>m.id===id);}
 function modItems(m){return PUZZLES.filter(p=>(p.cat||"tactics")===m.cat);}
-function modStats(m){const it=modItems(m);return {n:it.length,solved:it.filter(p=>STATE.puzzles.solved[p.id]).length};}
+function modStats(m){
+  if(m.lazy&&!m.loaded){
+    const solved=Object.keys(STATE.puzzles.solved).filter(k=>k.indexOf(m.prefix)===0).length;
+    return {n:m.n,solved:solved};
+  }
+  const it=modItems(m);return {n:it.length,solved:it.filter(p=>STATE.puzzles.solved[p.id]).length};
+}
+function modCard(m){
+  const st=modStats(m);
+  if(!st.n)return `<div class="mod" style="opacity:.5;cursor:default"><div class="mi">${m.icon}</div>
+    <div style="flex:1 1 auto"><div class="mt">${m.name}</div><div class="md">${m.blurb}</div>
+    <div class="md" style="color:var(--warn)">Not built yet — the Sunday job adds these.</div></div><div class="mp">—</div></div>`;
+  const pct=Math.round(100*st.solved/st.n);
+  const tag=m.lazy?`<span class="tag t-2nd">${m.ratingLo}–${m.ratingHi}</span>`:"";
+  return `<div class="mod ${st.solved===st.n?'done':''}" data-mod="${m.id}"><div class="mi">${m.icon}</div>
+    <div style="flex:1 1 auto"><div class="mt">${m.name}${tag}</div><div class="md">${m.blurb}</div>
+    <div class="prog" style="margin-top:6px"><i style="width:${pct}%"></i></div></div>
+    <div class="mp">${st.solved}/${st.n}</div></div>`;
+}
 function renderModules(){
   const el=$("#modList");if(!el)return;
   const inTrainer=!!CURMOD;
@@ -328,20 +373,25 @@ function renderModules(){
   $("#trainer").style.display=inTrainer?"":"none";
   if(inTrainer){const m=modOf(CURMOD);const st=modStats(m);
     $("#modTitle").textContent=m.name+" · "+st.solved+"/"+st.n;return;}
-  const cards=MODULES.map(m=>{
-    const st=modStats(m);
-    if(!st.n)return `<div class="mod" style="opacity:.5;cursor:default"><div class="mi">${m.icon}</div>
-      <div style="flex:1 1 auto"><div class="mt">${m.name}</div><div class="md">${m.blurb}</div>
-      <div class="md" style="color:var(--warn)">Not built yet — the Sunday job adds these.</div></div><div class="mp">—</div></div>`;
-    const pct=Math.round(100*st.solved/st.n);
-    return `<div class="mod ${st.solved===st.n?'done':''}" data-mod="${m.id}"><div class="mi">${m.icon}</div>
-      <div style="flex:1 1 auto"><div class="mt">${m.name}</div><div class="md">${m.blurb}</div>
-      <div class="prog" style="margin-top:6px"><i style="width:${pct}%"></i></div></div>
-      <div class="mp">${st.solved}/${st.n}</div></div>`;}).join("");
-  el.innerHTML=`<div class="card"><h3 style="margin-top:2px">Your modules</h3>
-    <div class="small muted">Everything in the plan, trainable here. Tap one to start.</div>${cards}</div>`;
+  const own=MODULES.filter(m=>!m.lazy),corpus=MODULES.filter(m=>m.lazy);
+  const ownDone=own.reduce((a,m)=>a+modStats(m).solved,0),ownAll=own.reduce((a,m)=>a+modStats(m).n,0);
+  const cDone=corpus.reduce((a,m)=>a+modStats(m).solved,0),cAll=corpus.reduce((a,m)=>a+modStats(m).n,0);
+  let html=`<div class="card"><h3 style="margin-top:2px">From your own games <span class="mp" style="float:right">${ownDone}/${ownAll}</span></h3>
+    <div class="small muted">Positions you actually got wrong. This is the part no book can give you.</div>
+    ${own.map(modCard).join("")}</div>`;
+  if(corpus.length)html+=`<div class="card"><h3 style="margin-top:2px">Graded curriculum <span class="mp" style="float:right">${cDone}/${cAll}</span></h3>
+    <div class="small muted">${cAll} puzzles from the Lichess database (CC0), rated 1600–2400 and ordered easiest-first inside each module. Downloaded when you open one.</div>
+    ${corpus.map(modCard).join("")}</div>`;
+  el.innerHTML=html;
 }
-function openModule(id){CURMOD=id;refreshSet();loadPuzzle(firstUnsolved());renderModules();renderSets();window.scrollTo(0,0);}
+async function openModule(id){
+  const m=modOf(id);
+  if(m.lazy&&!m.loaded){
+    toast("Loading "+m.name+"…");
+    if(!await ensureLoaded(m)){toast("Couldn't load that module — offline?");return;}
+  }
+  CURMOD=id;refreshSet();loadPuzzle(firstUnsolved());renderModules();renderSets();window.scrollTo(0,0);
+}
 function closeModule(){CURMOD=null;renderModules();window.scrollTo(0,0);}
 function refreshSet(){const m=CURMOD?modOf(CURMOD):null;ACTIVE=m?modItems(m):[];}
 // Index into ACTIVE, not PUZZLES — the two differ as soon as a set is selected.
@@ -527,8 +577,11 @@ function renderDash(){
     <div class="stat"><b>${(+blun).toFixed(2)}</b><span>Blunders/g <span class="delta ${dB>=0?'up':'down'}">${dB>=0?'▼':'▲'}${Math.abs(dB).toFixed(2)}</span></span></div>
     <div class="stat"><b>${TARGET.acpl}</b><span>Target → ~1900</span></div>`;
   const sc=Object.keys(STATE.puzzles.solved).length;
-  $("#progPuz").style.width=Math.round(100*sc/PUZZLES.length)+"%";
-  $("#progPuzTxt").textContent=`${sc}/${PUZZLES.length} solved · ${Object.keys(STATE.puzzles.firstTry).length} first-try`;
+  // Count the whole curriculum, including modules not yet downloaded — otherwise the
+  // headline would jump every time a module is opened.
+  const totalAll=MODULES.reduce((a,m)=>a+modStats(m).n,0)||PUZZLES.length;
+  $("#progPuz").style.width=Math.round(100*sc/Math.max(1,totalAll))+"%";
+  $("#progPuzTxt").textContent=`${sc}/${totalAll} solved · ${Object.keys(STATE.puzzles.firstTry).length} first-try`;
   let s=0,d=new Date();for(;;){const k=d.toISOString().slice(0,10);if(STATE.habitDays[k]&&STATE.habitDays[k].tactics){s++;d.setDate(d.getDate()-1);}else break;if(s>999)break;}
   $("#streak").textContent=s;$("#nextChk").textContent=nextSunday();
   renderChart();renderHabit();
@@ -735,6 +788,7 @@ function renderAll(){renderDash();renderCCT();renderToday();renderModules();rend
 (async function boot(){
   // Puzzles: try a live set (/puzzles.json, refreshed by the weekly job); fall back to embedded.
   try{const r=await fetch("puzzles.json",{cache:"no-store"});if(r.ok){const a=await r.json();if(Array.isArray(a)&&a.length&&a[0].fen&&(a[0].line||a[0].targets))PUZZLES=a;}}catch(e){}
+  await loadManifest();
   renderAll();
   // Gate on the refresh token: it is what actually lets us re-establish a session.
   // (This said `cloud.token` — a leftover field from the gist backend that no longer
