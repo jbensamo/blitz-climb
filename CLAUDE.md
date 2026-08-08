@@ -148,6 +148,14 @@ loop is inside GitHub, no Cloudflare needed.**
   `build_sets.sh` resolves it with `command -v`.
 - Yield is low by design (engine-verified, unique, decisive): ~7-8 endgame candidates per
   60 games becomes ~4-6 puzzles. Partial results are normal, not a failure.
+- `build/sets/*.json` is gitignored — only the MERGED output (`puzzles.json` +
+  `data/puzzles.json`) is committed. Reproducing a set locally means re-running
+  `build_sets.sh` (~6 min).
+- **The library only grows.** `merge_sets.py` appends to `data/puzzles.json` and the weekly
+  job adds ~10-20 genuinely-new positions a week (FEN dedupe stops repeats, but nothing
+  prunes). Both the served `puzzles.json` and the `/*PUZZLES*/` embed in `index.html` grow
+  with it — 18 -> 40 puzzles took index.html from 44KB to 68KB. At a few hundred puzzles
+  this needs a cap or a retire-the-solved-and-old rule; it is not a problem yet.
 - `tools/merge_sets.py` writes **both** `puzzles.json` (repo root — what Pages serves) and
   `data/puzzles.json`, deduping by FEN and refusing on an id collision. Then `python
   build.py` and push to `main`. (`tools/publish_puzzles.py` only matters for a Cloudflare
