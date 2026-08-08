@@ -1,16 +1,15 @@
 // End-to-end check of the Supabase sync backend, driving the SAME functions the app
 // ships (extracted from index.html) rather than a reimplementation.
 //
-//   SB_EMAIL=you@example.com node tools/verify_supabase.mjs
+//   node tools/verify_supabase.mjs
 //
-// It emails you one 6-digit code and waits for you to paste it. Supabase allows one
-// code per minute, so don't loop this.
+// Signs in as a throwaway account (created and deleted here) so it needs no email and
+// no interaction. Requires a service_role key in SB_SERVICE to create/delete that user.
 //
 // The load-bearing check is RLS_ANON: reading the table with only the public anon key
 // and no user session must come back empty. If it doesn't, the anon key in the shipped
 // HTML is an open door and nothing else about this setup matters.
 import fs from "node:fs";
-import readline from "node:readline/promises";
 
 const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const grab = (from, to) => {
@@ -28,11 +27,17 @@ globalThis.STATE = { version: 5, player: "jbensamo", checks: {}, habitDays: {}, 
                      updated: new Date().toISOString() };
 
 const app = new Function(src + `
-  return {cloud, sbFetch, sbSession, sbSendCode, sbVerifyCode, dbRead, dbWrite, sbConfigured, SB_URL, SB_ANON};`)();
+  return {cloud, sbFetch, sbSession, sbSignIn, dbRead, dbWrite, sbConfigured, SB_URL, SB_ANON};`)();
 
 if (!app.sbConfigured()) { console.error("FAIL — SB_URL / SB_ANON are still empty in index.html"); process.exit(1); }
-const email = process.env.SB_EMAIL;
-if (!email) { console.error("FAIL — set SB_EMAIL"); process.exit(1); }
+const svc = process.env.SB_SERVICE;
+if (!svc) { console.error("FAIL — set SB_SERVICE (service_role key)"); process.exit(1); }
+const stamp = process.env.SB_STAMP || "x";
+const email = `verify+${stamp}@blitz-climb.test`;
+const password = `verify-${stamp}-pw`;
+const admin = (path, opts = {}) => fetch(app.SB_URL.replace(/\/$/, "") + path, {
+  ...opts, headers: { apikey: svc, Authorization: "Bearer " + svc, "Content-Type": "application/json", ...(opts.headers || {}) },
+});
 
 const ok = (c, label) => console.log(`${c ? "PASS" : "FAIL"} — ${label}`);
 let failures = 0;
@@ -46,14 +51,16 @@ const anonBody = await anonRes.text();
 check(anonRes.status === 200 ? anonBody.trim() === "[]" : anonRes.status === 401 || anonRes.status === 403,
   `RLS_ANON: anon key alone cannot read rows (status ${anonRes.status}, body ${anonBody.slice(0, 60)})`);
 
-// 2. sign in
-await app.sbSendCode(email);
-console.log(`\n  a 6-digit code was emailed to ${email}`);
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-const code = (await rl.question("  paste it here: ")).trim();
-rl.close();
-await app.sbVerifyCode(email, code);
-check(!!app.cloud.at && !!app.cloud.uid, "sign-in with the emailed code returns a session + user id");
+// 2. sign up (first device) then sign in again (second visit) — no email involved
+const how = await app.sbSignIn(email, password);
+check(how === "new" && !!app.cloud.at && !!app.cloud.uid, `unknown email creates the account and returns a session (got "${how}")`);
+const savedUid = app.cloud.uid;
+const how2 = await app.sbSignIn(email, password);
+check(how2 === "in" && app.cloud.uid === savedUid, "signing in again reuses the same account");
+let wrongMsg = "";
+try { await app.sbSignIn(email, password + "!"); } catch (e) { wrongMsg = e.message; }
+check(/wrong password/i.test(wrongMsg), `wrong password says so, not "already registered" ("${wrongMsg}")`);
+await app.sbSignIn(email, password);
 
 // 3. write, then read back
 await app.dbWrite();
@@ -83,6 +90,12 @@ check(seen?.sessions?.[0]?.acpl === 44, "a second device with the same account r
 app.cloud.at = ""; app.cloud.exp = 0;
 await app.sbSession();
 check(!!app.cloud.at, "expired access token is refreshed from the refresh token");
+
+// cleanup: delete the throwaway user (cascades its progress row)
+const del = await admin(`/auth/v1/admin/users/${savedUid}`, { method: "DELETE" });
+console.log(`cleanup: deleted test user -> ${del.status}`);
+const left = await admin("/rest/v1/progress?select=user_id");
+console.log("rows remaining in progress:", await left.text());
 
 console.log(failures ? `\n${failures} FAILURE(S)` : "\nall checks passed");
 process.exit(failures ? 1 : 0);

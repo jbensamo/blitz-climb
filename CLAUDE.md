@@ -8,7 +8,7 @@ GitHub org; use a personal account.
 ## What this is
 A single-page chess trainer that drills tactics generated from the owner's **own** games
 (engine-verified with Stockfish), tracks progress, and syncs it across devices through a
-**Supabase Postgres** database with emailed one-time-code auth. There is intentionally
+**Supabase Postgres** database with email/password auth. There is intentionally
 **no framework, no bundler, and no server of our own** — it's one HTML file that talks to
 Supabase's REST APIs directly (no SDK, no CDN script). Keep it that way. Do not
 "modernize" it into React/Next/etc.; that would be over-engineering for a single-user tool.
@@ -58,13 +58,16 @@ docs/
   remote copy wins on load when its `updated` is newer. Setup: `docs/SETUP-sync.md`;
   schema: `db/schema.sql`.
   - **No SDK.** The app calls the REST APIs directly so it stays one self-contained file:
-    `POST /auth/v1/otp` (send code) -> `POST /auth/v1/verify` with `type:"email"` (exchange
-    for a session) -> `POST /auth/v1/token?grant_type=refresh_token` (renew) and
+    `POST /auth/v1/token?grant_type=password` (sign in) / `POST /auth/v1/signup` (first
+    device) -> `POST /auth/v1/token?grant_type=refresh_token` (renew) and
     `GET|POST /rest/v1/progress` for data. Upsert is `POST` with
     `Prefer: resolution=merge-duplicates`.
-  - **Auth is a 6-digit emailed code, deliberately not a magic link** — a link tapped on a
-    phone opens in whichever browser owns the link, which is usually not the one you're
-    syncing. This requires `{{ .Token }}` in the Magic Link email template.
+  - **Auth is email + password with `mailer_autoconfirm` on, so NO email is ever sent.**
+    This is forced, not a preference: free-tier projects cannot edit email templates at
+    all (so `{{ .Token }}` for a 6-digit code is impossible) and `rate_limit_email_sent`
+    is 2/hour. Don't "improve" this into magic links or OTP without a custom SMTP provider.
+    Unknown email -> `/auth/v1/signup` creates the account; a wrong password is reported
+    as such rather than leaking signup's "User already registered".
   - `SB_URL` / `SB_ANON` are top-of-section constants and **are meant to be committed**.
     The anon key is public by design; **RLS is the only thing protecting the data**, so
     never disable it and never let a policy widen past `auth.uid() = user_id`.
@@ -76,8 +79,8 @@ docs/
     write. This is load-bearing: if the timestamp only moved when sync was on, a device used
     offline would carry a stale one and lose its progress to an empty device that signed in
     first. Don't "optimize" it back into the write path.
-  - **Known edges:** last-write-wins with no merge; one OTP per minute, expiring in an hour;
-    free-tier projects pause after ~a week idle, which makes sync fail until un-paused.
+  - **Known edges:** last-write-wins with no merge; free-tier projects pause after ~a week
+    idle, which makes sync fail until un-paused; project ref `ncodlvmhfehxmbvnyyuh`.
 - **Worker** (`worker.js`): **not used in production** — kept so the app can also be hosted
   on Cloudflare if ever wanted. Routes: `GET /` -> app; `GET /puzzles.json` -> KV `puzzles`;
   `PUT /api/puzzles` (header `x-admin-token: $ADMIN_TOKEN`) -> sets it. `GET/PUT /api/state`
@@ -93,9 +96,9 @@ Hosting and sync are live. Full walkthrough in **`docs/SETUP-sync.md`**. In shor
 2. **Settings → Pages** → deploy from branch `main`, folder `/` → `https://jbensamo.github.io/blitz-climb/`.
 3. **Settings → Actions → General → Workflow permissions = Read and write** (else the
    weekly job can't commit refreshed puzzles; it fails silently on `git push`).
-4. Supabase project + `db/schema.sql` + `{{ .Token }}` in the Magic Link email template,
-   then `SB_URL`/`SB_ANON` filled into `index.html`. Full steps: `docs/SETUP-sync.md`.
-5. Per device: **Sync** tab → enter your email → type the 6-digit code it mails you.
+4. Supabase project + `db/schema.sql` + `mailer_autoconfirm`, then `SB_URL`/`SB_ANON`
+   filled into `index.html` (both are meant to be committed). Steps: `docs/SETUP-sync.md`.
+5. Per device: **Sync** tab → same email + password → **Sign in & sync**.
    Deploying a change = `python build.py` + push to `main`.
 
 Prereqs for the *tools* only (not for hosting): Python 3.11+ and Stockfish
@@ -143,11 +146,11 @@ loop is inside GitHub, no Cloudflare needed.**
 
 ## Verifying changes
 - App: open the deployed URL; solve a puzzle; confirm it persists after reload.
-- Sync: `SB_EMAIL=<you> node tools/verify_supabase.mjs`. It extracts the shipped sync
+- Sync: `SB_SERVICE=<service_role key> node tools/verify_supabase.mjs`. It extracts the shipped sync
   functions from `index.html` and drives them against the live project, so it tests the
   real code, not a copy. Covers anon-key-cannot-read (RLS), sign-in, write, read-back,
-  upsert-not-duplicate, second-device read, and token refresh. It emails ONE code and
-  waits for you to paste it — Supabase allows one per minute, so don't loop it.
+  upsert-not-duplicate, second-device read, and token refresh. It creates and deletes a
+  throwaway account, so it needs no email and no interaction.
 - The load-bearing check is the RLS one: `GET /rest/v1/progress` with only the anon key and
   no user session must return `[]`. If it returns rows, the public key in the shipped HTML
   is an open door and nothing else matters.

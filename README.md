@@ -11,12 +11,11 @@ no server of its own and no framework.
 
 ## Cross-device sync
 Progress lives in your own row of a **private Supabase Postgres** database, protected by
-row-level security. Sign-in is a 6-digit code emailed to you — no password, and nothing to
-copy between devices.
+row-level security. Sign-in is email + password, and no email is ever sent.
 
-1. App -> **Sync** tab -> enter your email -> **Email me a code**.
-2. Type the 6-digit code -> **Verify & sync**. The Home pill turns green.
-3. Same email on your other device. That's it.
+1. App -> **Sync** tab -> enter your email and a 10+ character password.
+2. **Sign in & sync**. The Home pill turns green. (The first device creates the account.)
+3. Same email and password on your other device. That's it.
 
 Sign in first on the device that already has your progress — sync is last-write-wins with
 no merge. One-time project setup and the known edges are in `docs/SETUP-sync.md`. Prefer no
