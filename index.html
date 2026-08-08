@@ -983,6 +983,11 @@ async function sbSignIn(email,password){
       // rather than leaking the signup path's "User already registered".
       if(/already registered|already exists/i.test(e2.message))
         throw new Error("wrong password for "+email);
+      // Once sign-ups are closed, this fallback can't tell "wrong password" from
+      // "no such account" — GoTrue refuses before it looks the user up. Say both
+      // rather than surfacing a raw "Signups not allowed for this instance".
+      if(/signups? not allowed|signup.*(disabled|not allowed)/i.test(e2.message))
+        throw new Error("wrong password, or no account for "+email);
       throw e2;
     }
   }
