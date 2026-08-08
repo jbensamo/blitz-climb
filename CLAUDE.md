@@ -61,6 +61,11 @@ docs/
   - **`markSolved()` is the single write path for BOTH kinds** — streak, `byDay`, Home
     totals and cloud sync all depend on it. Never record a solve any other way.
   - A module with zero items renders greyed out ("not built yet"), never clickable.
+  - `WORK` rows carry `mod` when that curriculum item is trainable in-app; the Plan tab
+    links them to the module and the "More homework" card shows only the rows WITHOUT a
+    `mod` (the Chernev book, the Woodpecker set) — the things that genuinely can't move
+    in-app. Adding a module means adding `mod` to its `WORK` row, or the plan will list
+    the same work twice.
   - "Today's module" is a second **view** of `STATE.checks[wkPre()+id]` — the same key the
     Plan tab's weekly list owns — never a copy. Nothing is ever locked.
 - **App** (`index.html`): pure vanilla JS. Puzzles are embedded as a fallback, but on load
@@ -145,6 +150,17 @@ loop is inside GitHub, no Cloudflare needed.**
 
 ## Running the tools by hand
 - Analyze a PGN: `python tools/analyze.py data/games/blitz_60.pgn jbensamo`
+- The generators, one per module: `generate_puzzles.py` (tactics/endgames/strategy, from
+  his games), `gen_cct.py` (C.C.T. scans — no engine, pure legal-move generation),
+  `gen_endgame_theory.py` (K+P vs K only-move positions — **searched and engine-certified,
+  never hand-authored FENs**, so the project ships no chess it hasn't verified),
+  `gen_openings.py` (his own most-played lines, each of HIS moves engine-checked and the
+  line cut before any real mistake). All write to `build/sets/`; `merge_sets.py` combines.
+- **Every generated line must start AND end on a user move** — the trainer asks the user to
+  play `line[0]`. As Black an opening line begins with White's move, so `gen_openings.py`
+  replays the leading opponent plies into the starting FEN instead. Replay-verify new
+  generators (legal moves, SAN and FEN consistency, first/last ply `user:true`) before
+  merging; that check is what caught it.
 - Rebuild ALL puzzle sets: `bash tools/build_sets.sh` (~6 min; writes `build/sets/*.json`,
   which is gitignored). It drives `generate_puzzles.py` several times via env vars —
   `OUT`, `CACHE`, `ID_PREFIX`, `CAT`, `PHASE_ONLY`, `MAX_PUZZLES`, `WALL`, `ENGINE`.
