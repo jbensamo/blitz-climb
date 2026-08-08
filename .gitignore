@@ -4,3 +4,4 @@ node_modules/
 *.log
 candidates.json
 .DS_Store
+build/

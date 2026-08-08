@@ -25,14 +25,32 @@ jobs:
           echo "games:"; grep -c '\[Event ' data/games/blitz_latest.pgn || true
       - name: Analyze (ACPL / blunders vs baseline)
         run: python tools/analyze.py data/games/blitz_latest.pgn jbensamo | tee data/last_report.txt
-      - name: Regenerate puzzles from newest blunders
-        run: rm -f candidates.json && python tools/generate_puzzles.py data/games/blitz_latest.pgn jbensamo
+      # Build BOTH sets from the newest games and merge them into the existing library.
+      # The id prefix is date-stamped so weekly runs never collide with earlier ids
+      # (progress is keyed by id, so a collision would mark new puzzles as solved), and
+      # merge_sets.py drops any position already present, so repeats don't accumulate.
+      - name: Regenerate puzzle sets from newest blunders
+        run: |
+          set -e
+          STAMP=$(date -u +%y%m%d)
+          mkdir -p build/sets
+          CACHE=build/sets/cand_end.json OUT=build/sets/end_new.json \
+          ID_PREFIX="e${STAMP}_" CAT=endgame PHASE_ONLY=endgame \
+          MAX_PUZZLES=10 MAX_PER_GAME=2 WALL=700 \
+          python tools/generate_puzzles.py data/games/blitz_latest.pgn
+          CACHE=build/sets/cand_tac.json OUT=build/sets/tac_new.json \
+          ID_PREFIX="t${STAMP}_" CAT=tactics \
+          MAX_PUZZLES=14 MAX_PER_GAME=2 WALL=700 \
+          python tools/generate_puzzles.py data/games/blitz_latest.pgn
+      - name: Merge into the puzzle library
+        run: |
+          python tools/merge_sets.py build/sets
+          python build.py          # re-embed the offline fallback
       - name: Publish fresh puzzles to Cloudflare KV
         if: ${{ env.CF_WORKER_URL != '' && env.ADMIN_TOKEN != '' }}
         run: python tools/publish_puzzles.py puzzles.json
       - name: Commit refreshed data
         run: |
-          cp -f puzzles.json data/puzzles.json || true
           git config user.name "blitz-climb-bot"
           git config user.email "bot@users.noreply.github.com"
           git add -A && git commit -m "weekly refresh $(date -u +%F)" || echo "no changes"

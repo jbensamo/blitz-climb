@@ -6,13 +6,27 @@ import sys, math, json, time
 from collections import defaultdict
 import chess, chess.pgn, chess.engine
 
-ENGINE="/usr/games/stockfish"; USER="jbensamo"
-SCAN_DEPTH=12          # candidate detection
-VERIFY_DEPTH=15        # solution verification
-MAX_PUZZLES=18
-MAX_PER_GAME=3
-WALL=470
 import os
+# All tunables are env-overridable so one script can build several sets
+# (tactics / endgames, blitz / rapid) without forking it.
+ENGINE=os.environ.get("ENGINE","/usr/games/stockfish"); USER="jbensamo"
+SCAN_DEPTH=int(os.environ.get("SCAN_DEPTH",12))     # candidate detection
+VERIFY_DEPTH=int(os.environ.get("VERIFY_DEPTH",15)) # solution verification
+MAX_PUZZLES=int(os.environ.get("MAX_PUZZLES",18))
+MAX_PER_GAME=int(os.environ.get("MAX_PER_GAME",3))
+WALL=int(os.environ.get("WALL",470))
+OUT=os.environ.get("OUT","puzzles.json")
+CACHE=os.environ.get("CACHE","candidates.json")
+ID_PREFIX=os.environ.get("ID_PREFIX","p")
+CAT=os.environ.get("CAT","tactics")                 # puzzle set the app groups by
+PHASE_ONLY=os.environ.get("PHASE_ONLY","")          # "" = any, or "endgame"/"middlegame"/"opening"
+
+def phase(board):
+    """Same definition analyze.py uses, so 'endgame' here matches the baseline stats."""
+    npm=sum({chess.PAWN:1,chess.KNIGHT:3,chess.BISHOP:3,chess.ROOK:5,chess.QUEEN:9,chess.KING:0}[p.piece_type]
+            for p in board.piece_map().values() if p.piece_type not in (chess.PAWN,chess.KING))
+    if board.fullmove_number<=12: return "opening"
+    return "endgame" if npm<=16 else "middlegame"
 
 def winpct(cp): return 50+50*(2/(1+math.exp(-0.00368208*cp))-1)
 def povcp(info, pov):   # side-to-move-agnostic: return cp from `pov` color
@@ -47,12 +61,11 @@ def main(path):
     eng.configure({"Threads":2,"Hash":256})
     t0=time.time()
 
-    CACHE="candidates.json"
     if os.path.exists(CACHE):
         candidates=[tuple(c) for c in json.load(open(CACHE))]
         print(f"loaded {len(candidates)} cached candidates", flush=True)
     else:
-        candidates=[]  # (drop, gi, fen, uc 'w'/'b', played_uci, url, movno)
+        candidates=[]  # (drop, gi, fen, uc 'w'/'b', played_uci, url, movno, phase)
         for gi,g in enumerate(games):
             w=g.headers.get("White","").lower(); b=g.headers.get("Black","").lower()
             if USER==w: uc=chess.WHITE
@@ -71,14 +84,16 @@ def main(path):
                     after  = cur_w  if uc==chess.WHITE else -cur_w
                     drop=winpct(before)-winpct(after)
                     if drop>=18 and before>=60:
-                        candidates.append([drop, gi, fen, "w" if uc==chess.WHITE else "b", played.uci(), url, movno])
+                        ph=phase(chess.Board(fen))
+                        if not PHASE_ONLY or ph==PHASE_ONLY:
+                            candidates.append([drop, gi, fen, "w" if uc==chess.WHITE else "b", played.uci(), url, movno, ph])
                 prev_w=cur_w
         json.dump(candidates, open(CACHE,"w"))
         print(f"candidates: {len(candidates)} ({int(time.time()-t0)}s) [cached]", flush=True)
 
     candidates.sort(reverse=True, key=lambda c:c[0])
     puzzles=[]; per_game=defaultdict(int)
-    for drop, gi, fen, uc_s, played_uci, url, movno in candidates:
+    for drop, gi, fen, uc_s, played_uci, url, movno, ph in candidates:
         uc = chess.WHITE if uc_s=="w" else chess.BLACK
         played = chess.Move.from_uci(played_uci)
         if len(puzzles)>=MAX_PUZZLES: break
@@ -125,12 +140,14 @@ def main(path):
         gain_txt = ("forces mate" if first_gain and first_gain>=90000
                     else f"gains about +{first_gain/100:.1f}")
         puzzles.append({
-            "id": f"p{len(puzzles)+1}",
+            "id": f"{ID_PREFIX}{len(puzzles)+1}",
             "fen": fen,
             "sideToMove": "w" if board.turn==chess.WHITE else "b",
             "userColor": "w" if uc==chess.WHITE else "b",
             "line": line,
             "motif": mtf,
+            "cat": CAT,
+            "phase": ph,
             "youPlayed": played_san,
             "sourceUrl": url,
             "moveNo": movno,
@@ -138,9 +155,9 @@ def main(path):
         })
         per_game[gi]+=1
     eng.quit()
-    with open("puzzles.json","w") as f:
+    with open(OUT,"w") as f:
         json.dump(puzzles, f, indent=1)
-    print(f"\nBUILT {len(puzzles)} puzzles in {int(time.time()-t0)}s")
+    print(f"\nBUILT {len(puzzles)} {CAT} puzzles -> {OUT} in {int(time.time()-t0)}s")
     for p in puzzles:
         umoves=[s['san'] for s in p['line'] if s['user']]
         print(f"  {p['id']}: {p['sideToMove']} to move | {p['motif']:16s} | sol {umoves} | you played {p['youPlayed']} | {p['sourceUrl']} m{p['moveNo']}")

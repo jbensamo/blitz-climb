@@ -49,6 +49,12 @@ docs/
 ```
 
 ## Architecture notes
+- **Train tab**: `PUZZLES` is every puzzle; `ACTIVE` is the set being trained and is what
+  puzzle navigation indexes. `renderDash()` deliberately still counts `PUZZLES` so the
+  headline is "of everything". A set with zero puzzles is never offered, and the switcher
+  hides itself when only one set exists. "Today's module" is a second **view** of
+  `STATE.checks[wkPre()+id]` — the same key the Plan tab's weekly list owns — never a copy.
+  Nothing in the Train tab is ever locked; today's module is highlighted, not enforced.
 - **App** (`index.html`): pure vanilla JS. Puzzles are embedded as a fallback, but on load
   the app fetches **`puzzles.json`** (relative — must stay at the site root, since Pages
   serves the app under `/blitz-climb/`) and uses it if present, so the weekly job refreshes
@@ -86,7 +92,10 @@ docs/
   `PUT /api/puzzles` (header `x-admin-token: $ADMIN_TOKEN`) -> sets it. `GET/PUT /api/state`
   is now **dead code** — sync no longer uses it; don't wire anything back to it without
   reading `docs/SETUP-sync.md` first.
-- After editing `index.html`, ALWAYS run `python build.py` (keeps `worker.js` in sync).
+- `build.py` does TWO things: re-embeds `data/puzzles.json` into `index.html` as the
+  offline fallback (the array after the `/*PUZZLES*/` marker), then inlines `index.html`
+  into `worker.js`. It used to only do the second, so the embedded fallback silently
+  drifted. Run it after editing `index.html` OR after regenerating puzzles.
   Deploying to Pages is just a push to `main`.
 
 ## SETUP — already done; recorded so it can be rebuilt
@@ -128,20 +137,38 @@ loop is inside GitHub, no Cloudflare needed.**
 
 ## Running the tools by hand
 - Analyze a PGN: `python tools/analyze.py data/games/blitz_60.pgn jbensamo`
-- Regenerate puzzles: `rm -f candidates.json && python tools/generate_puzzles.py data/games/blitz_60.pgn jbensamo`
-  (writes `./puzzles.json`; `candidates.json` is a scan cache — delete it to force a rescan).
-  Both scripts expect Stockfish at `/usr/games/stockfish` (edit the `ENGINE` constant if elsewhere).
-- After regenerating, copy the new set to **both** `puzzles.json` (repo root — this is what
-  Pages actually serves) and `data/puzzles.json`, then `python build.py` and push to `main`.
-  (`tools/publish_puzzles.py` only matters for a Cloudflare deployment, which isn't live.)
+- Rebuild ALL puzzle sets: `bash tools/build_sets.sh` (~6 min; writes `build/sets/*.json`,
+  which is gitignored). It drives `generate_puzzles.py` several times via env vars —
+  `OUT`, `CACHE`, `ID_PREFIX`, `CAT`, `PHASE_ONLY`, `MAX_PUZZLES`, `WALL`, `ENGINE`.
+  Then merge with `python tools/merge_sets.py`.
+- One set by hand: `CACHE=/tmp/c.json OUT=/tmp/o.json ID_PREFIX=e CAT=endgame PHASE_ONLY=endgame
+  python3 tools/generate_puzzles.py data/games/blitz_60.pgn`. `CACHE` is a scan cache —
+  use a distinct path per set or runs poison each other. `ENGINE` defaults to
+  `/usr/games/stockfish`; on macOS `brew install stockfish` puts it elsewhere, and
+  `build_sets.sh` resolves it with `command -v`.
+- Yield is low by design (engine-verified, unique, decisive): ~7-8 endgame candidates per
+  60 games becomes ~4-6 puzzles. Partial results are normal, not a failure.
+- `tools/merge_sets.py` writes **both** `puzzles.json` (repo root — what Pages serves) and
+  `data/puzzles.json`, deduping by FEN and refusing on an id collision. Then `python
+  build.py` and push to `main`. (`tools/publish_puzzles.py` only matters for a Cloudflare
+  deployment, which isn't live.)
 
 ## Data schemas
 - Puzzle: `{id, fen, sideToMove, userColor, line:[{uci,from,to,san,fen,user,promo}],
-  motif, youPlayed, sourceUrl, moveNo, explain}`. Only the engine's move is accepted;
-  `line` alternates user/opponent plies and each carries the resulting FEN.
+  motif, cat, phase, youPlayed, sourceUrl, moveNo, explain}`. Only the engine's move is
+  accepted; `line` alternates user/opponent plies and each carries the resulting FEN.
+  - `cat` groups puzzles into the Train tab's sets (`tactics` | `endgame`); missing `cat`
+    reads as `tactics`, which is how the original 18 still work. `phase` is the
+    `analyze.py` classifier's label, so "endgame" means the same thing as in the baseline.
+  - **Ids must be globally unique across sets** — progress is keyed by id alone
+    (`STATE.puzzles.solved[id]`). Prefixes in use: `p` (blitz tactics), `r` (rapid
+    tactics), `eb`/`er` (blitz/rapid endgames). Reusing a prefix silently marks new
+    puzzles as already solved.
 - Progress (`public.progress.data` jsonb / localStorage `chessTrainer_v5`):
   `{version, player, checks, habitDays, sessions:[{date,acpl,blunders,note}],
-  puzzles:{solved,attempts,firstTry,byDay}, updated}`. `updated` (ISO string) is what
+  puzzles:{solved,attempts,firstTry,byDay}, homework:{"<ISO date>":{"<work id>":count}},
+  updated}`. Any NEW top-level field must also be defaulted inside `adoptRemote` and
+  `doImport`, or syncing from a device on an older build silently drops it. `updated` (ISO string) is what
   decides adopt-remote vs push-local; `save()` refreshes it on every local change.
 
 ## Verifying changes

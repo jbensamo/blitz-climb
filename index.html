@@ -76,6 +76,11 @@
   .btnrow button{flex:1 1 auto}
   .statusbar{text-align:center;font-weight:700;min-height:22px;margin-top:6px}
   .status-ok{color:var(--good)}.status-bad{color:var(--bad)}
+  .setrow{display:flex;gap:8px;margin:11px 0 0}
+  .setrow button{flex:1 1 0;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:8px 6px;font-size:12.5px;font-weight:600;cursor:pointer;line-height:1.3}
+  .setrow button.on{border-color:var(--accent);color:var(--accent);background:var(--panel2)}
+  .setrow button b{display:block;font-size:11px;font-weight:500;opacity:.8}
+  .hwbtn{flex:0 0 auto;align-self:center;padding:5px 10px;font-size:12px;border-radius:8px}
   .dots{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:8px}
   .dot{width:16px;height:16px;border-radius:5px;border:1px solid var(--line);background:var(--panel2);font-size:9px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer}
   .dot.solved{background:var(--good);color:#042;border-color:var(--good)}
@@ -109,6 +114,13 @@
 
   <!-- TRAIN (puzzles) -->
   <section class="tabpage" id="tab-train">
+    <div class="card" id="todayCard" style="padding:12px">
+      <div class="small muted">Today's module · <span id="todayDay"></span></div>
+      <div class="t" id="todayText" style="font-weight:600;margin-top:3px"></div>
+      <div class="btnrow"><button id="btnTodayDone" class="primary"></button></div>
+      <div class="small muted" id="todayHint" style="margin-top:6px"></div>
+    </div>
+    <div class="setrow" id="setSwitch"></div>
     <div class="card" style="padding:12px">
       <div class="small muted" id="puzMeta">Puzzle</div>
       <div id="board"></div>
@@ -121,7 +133,11 @@
       </div>
       <div id="puzExplain" class="note good small" style="display:none"></div>
       <div class="dots" id="puzDots"></div>
-      <div class="small muted" style="margin-top:8px">These are real positions from your blitz games where you had a winning move and missed it. Only the engine's move counts. Find it before you tap.</div>
+      <div class="small muted" id="puzBlurb" style="margin-top:8px"></div>
+    </div>
+    <div class="card"><h3 style="margin-top:2px">More homework</h3>
+      <div class="small muted">Nothing here is locked — do whatever you have time for. Logging a session builds the record you send on Sundays.</div>
+      <div id="hwList"></div>
     </div>
   </section>
 
@@ -185,512 +201,7 @@
 
 <script>
 "use strict";
-let PUZZLES = /*PUZZLES*/[
- {
-  "id": "p1",
-  "fen": "r1bq1rk1/5ppp/3p1bP1/2pN4/4PP2/1P2BQP1/1pP1B3/2KR3R w - - 0 21",
-  "sideToMove": "w",
-  "userColor": "w",
-  "line": [
-   {
-    "uci": "c1d2",
-    "from": "c1",
-    "to": "d2",
-    "san": "Kd2",
-    "fen": "r1bq1rk1/5ppp/3p1bP1/2pN4/4PP2/1P2BQP1/1pPKB3/3R3R b - - 1 21",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "Kb1",
-  "sourceUrl": "https://lichess.org/TlrKodp7",
-  "moveNo": 21,
-  "explain": "You played Kb1. The engine's Kd2 gains about +2.7."
- },
- {
-  "id": "p2",
-  "fen": "3r4/1p3k1p/3p1P2/2p5/2Nn4/7P/1r4P1/3R1RK1 w - - 1 26",
-  "sideToMove": "w",
-  "userColor": "w",
-  "line": [
-   {
-    "uci": "c4b2",
-    "from": "c4",
-    "to": "b2",
-    "san": "Nxb2",
-    "fen": "3r4/1p3k1p/3p1P2/2p5/3n4/7P/1N4P1/3R1RK1 b - - 0 26",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Win material",
-  "youPlayed": "Rde1",
-  "sourceUrl": "https://lichess.org/AkzPEDRx",
-  "moveNo": 26,
-  "explain": "You played Rde1. The engine's Nxb2 gains about +4.8."
- },
- {
-  "id": "p3",
-  "fen": "r2qk2r/p3bppp/1p2p1b1/2ppn1B1/4PPB1/2PP4/PP1N1QPP/2KR2NR b kq - 0 14",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "e5d3",
-    "from": "e5",
-    "to": "d3",
-    "san": "Nxd3+",
-    "fen": "r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2Pn4/PP1N1QPP/2KR2NR w kq - 0 15",
-    "user": true,
-    "promo": null
-   },
-   {
-    "uci": "c1c2",
-    "from": "c1",
-    "to": "c2",
-    "san": "Kc2",
-    "fen": "r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2Pn4/PPKN1QPP/3R2NR b kq - 1 15",
-    "user": false,
-    "promo": null
-   },
-   {
-    "uci": "d3f2",
-    "from": "d3",
-    "to": "f2",
-    "san": "Nxf2",
-    "fen": "r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2P5/PPKN1nPP/3R2NR w kq - 0 16",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Win material",
-  "youPlayed": "Nxg4",
-  "sourceUrl": "https://lichess.org/fmb3X4RJ",
-  "moveNo": 14,
-  "explain": "You played Nxg4. The engine's Nxd3+ gains about +6.6."
- },
- {
-  "id": "p4",
-  "fen": "8/8/1p1p1R2/p5pp/2P1k3/PP6/2r3PP/3K4 w - - 0 35",
-  "sideToMove": "w",
-  "userColor": "w",
-  "line": [
-   {
-    "uci": "d1c2",
-    "from": "d1",
-    "to": "c2",
-    "san": "Kxc2",
-    "fen": "8/8/1p1p1R2/p5pp/2P1k3/PP6/2K3PP/8 b - - 0 35",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Win material",
-  "youPlayed": "Rxd6",
-  "sourceUrl": "https://lichess.org/5ZaKAx7t",
-  "moveNo": 35,
-  "explain": "You played Rxd6. The engine's Kxc2 gains about +5.7."
- },
- {
-  "id": "p5",
-  "fen": "8/1n3k2/1B2b2p/p1p1Pp2/PPP2P2/1P1K3P/8/8 b - - 0 32",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "c5b4",
-    "from": "c5",
-    "to": "b4",
-    "san": "cxb4",
-    "fen": "8/1n3k2/1B2b2p/p3Pp2/PpP2P2/1P1K3P/8/8 w - - 0 33",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Win material",
-  "youPlayed": "axb4",
-  "sourceUrl": "https://lichess.org/SqTtPcmZ",
-  "moveNo": 32,
-  "explain": "You played axb4. The engine's cxb4 gains about +2.4."
- },
- {
-  "id": "p6",
-  "fen": "8/6pp/p4qk1/3b4/PPp5/2Pp2QP/6P1/4rNK1 b - - 5 36",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "f6g5",
-    "from": "f6",
-    "to": "g5",
-    "san": "Qg5",
-    "fen": "8/6pp/p5k1/3b2q1/PPp5/2Pp2QP/6P1/4rNK1 w - - 6 37",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "Kh6",
-  "sourceUrl": "https://lichess.org/4Z4aLsuU",
-  "moveNo": 36,
-  "explain": "You played Kh6. The engine's Qg5 gains about +6.2."
- },
- {
-  "id": "p7",
-  "fen": "8/8/3p4/1p6/2k5/2P5/1K6/8 b - - 5 59",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "c4d3",
-    "from": "c4",
-    "to": "d3",
-    "san": "Kd3",
-    "fen": "8/8/3p4/1p6/8/2Pk4/1K6/8 w - - 6 60",
-    "user": true,
-    "promo": null
-   },
-   {
-    "uci": "b2b3",
-    "from": "b2",
-    "to": "b3",
-    "san": "Kb3",
-    "fen": "8/8/3p4/1p6/8/1KPk4/8/8 b - - 7 60",
-    "user": false,
-    "promo": null
-   },
-   {
-    "uci": "d6d5",
-    "from": "d6",
-    "to": "d5",
-    "san": "d5",
-    "fen": "8/8/8/1p1p4/8/1KPk4/8/8 w - - 0 61",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "d5",
-  "sourceUrl": "https://lichess.org/AKW6ZayR",
-  "moveNo": 59,
-  "explain": "You played d5. The engine's Kd3 gains about +9.7."
- },
- {
-  "id": "p8",
-  "fen": "6k1/R5p1/7p/7P/6P1/8/p4K2/r7 b - - 3 43",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "a1h1",
-    "from": "a1",
-    "to": "h1",
-    "san": "Rh1",
-    "fen": "6k1/R5p1/7p/7P/6P1/8/p4K2/7r w - - 4 44",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "Kf8",
-  "sourceUrl": "https://lichess.org/mOokATB5",
-  "moveNo": 43,
-  "explain": "You played Kf8. The engine's Rh1 gains about +5.7."
- },
- {
-  "id": "p9",
-  "fen": "r4rk1/3q1pp1/pN1p4/1p6/2pnP1p1/P2P2P1/1PP4P/2R1QRK1 b - - 1 20",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "d7a7",
-    "from": "d7",
-    "to": "a7",
-    "san": "Qa7",
-    "fen": "r4rk1/q4pp1/pN1p4/1p6/2pnP1p1/P2P2P1/1PP4P/2R1QRK1 w - - 2 21",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "Qe6",
-  "sourceUrl": "https://lichess.org/AKW6ZayR",
-  "moveNo": 20,
-  "explain": "You played Qe6. The engine's Qa7 gains about +4.0."
- },
- {
-  "id": "p10",
-  "fen": "r1b3k1/4rpbp/p1q1p1p1/1p2P1N1/N1B5/1P6/P3QPPP/R4RK1 w - - 0 18",
-  "sideToMove": "w",
-  "userColor": "w",
-  "line": [
-   {
-    "uci": "c4d3",
-    "from": "c4",
-    "to": "d3",
-    "san": "Bd3",
-    "fen": "r1b3k1/4rpbp/p1q1p1p1/1p2P1N1/N7/1P1B4/P3QPPP/R4RK1 b - - 1 18",
-    "user": true,
-    "promo": null
-   },
-   {
-    "uci": "c8b7",
-    "from": "c8",
-    "to": "b7",
-    "san": "Bb7",
-    "fen": "r5k1/1b2rpbp/p1q1p1p1/1p2P1N1/N7/1P1B4/P3QPPP/R4RK1 w - - 2 19",
-    "user": false,
-    "promo": null
-   },
-   {
-    "uci": "d3e4",
-    "from": "d3",
-    "to": "e4",
-    "san": "Be4",
-    "fen": "r5k1/1b2rpbp/p1q1p1p1/1p2P1N1/N3B3/1P6/P3QPPP/R4RK1 b - - 3 19",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "Rac1",
-  "sourceUrl": "https://lichess.org/Hj7jrZnr",
-  "moveNo": 18,
-  "explain": "You played Rac1. The engine's Bd3 gains about +4.7."
- },
- {
-  "id": "p11",
-  "fen": "6k1/4bp2/p2p4/Qp1PpP2/5qB1/7K/PP3PP1/8 b - - 4 29",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "f4h6",
-    "from": "f4",
-    "to": "h6",
-    "san": "Qh6+",
-    "fen": "6k1/4bp2/p2p3q/Qp1PpP2/6B1/7K/PP3PP1/8 w - - 5 30",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Forcing tactic",
-  "youPlayed": "Qxf2",
-  "sourceUrl": "https://lichess.org/umPVXsPd",
-  "moveNo": 29,
-  "explain": "You played Qxf2. The engine's Qh6+ gains about +6.0."
- },
- {
-  "id": "p12",
-  "fen": "r4rk1/1b2bppp/4p3/p7/1p2PB2/1P3N2/1PP2PPP/3RR1K1 w - - 0 17",
-  "sideToMove": "w",
-  "userColor": "w",
-  "line": [
-   {
-    "uci": "d1d7",
-    "from": "d1",
-    "to": "d7",
-    "san": "Rd7",
-    "fen": "r4rk1/1b1Rbppp/4p3/p7/1p2PB2/1P3N2/1PP2PPP/4R1K1 b - - 1 17",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "Nd2",
-  "sourceUrl": "https://lichess.org/1hM59Rp3",
-  "moveNo": 17,
-  "explain": "You played Nd2. The engine's Rd7 gains about +4.5."
- },
- {
-  "id": "p13",
-  "fen": "2r4r/1p1qkp1p/p2p1p2/4p3/PPP5/5P2/3Q1P1P/R1R3K1 b - - 2 20",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "d7h3",
-    "from": "d7",
-    "to": "h3",
-    "san": "Qh3",
-    "fen": "2r4r/1p2kp1p/p2p1p2/4p3/PPP5/5P1q/3Q1P1P/R1R3K1 w - - 3 21",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "Rhg8+",
-  "sourceUrl": "https://lichess.org/6A2E3M4M",
-  "moveNo": 20,
-  "explain": "You played Rhg8+. The engine's Qh3 gains about +7.5."
- },
- {
-  "id": "p14",
-  "fen": "r3r1k1/pp2q1pp/3b4/1PpP1p2/2P1p3/1PN4P/4QPP1/4RRK1 b - - 1 20",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "e7e5",
-    "from": "e7",
-    "to": "e5",
-    "san": "Qe5",
-    "fen": "r3r1k1/pp4pp/3b4/1PpPqp2/2P1p3/1PN4P/4QPP1/4RRK1 w - - 2 21",
-    "user": true,
-    "promo": null
-   },
-   {
-    "uci": "f2f4",
-    "from": "f2",
-    "to": "f4",
-    "san": "f4",
-    "fen": "r3r1k1/pp4pp/3b4/1PpPqp2/2P1pP2/1PN4P/4Q1P1/4RRK1 b - f3 0 21",
-    "user": false,
-    "promo": null
-   },
-   {
-    "uci": "e5c3",
-    "from": "e5",
-    "to": "c3",
-    "san": "Qxc3",
-    "fen": "r3r1k1/pp4pp/3b4/1PpP1p2/2P1pP2/1Pq4P/4Q1P1/4RRK1 w - - 0 22",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "Be5",
-  "sourceUrl": "https://lichess.org/t632fav9",
-  "moveNo": 20,
-  "explain": "You played Be5. The engine's Qe5 gains about +5.1."
- },
- {
-  "id": "p15",
-  "fen": "r4rk1/pp2qppp/3pb3/2p5/3nPNn1/2NP2P1/PPP3BP/R3QRK1 b - - 3 13",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "d4c2",
-    "from": "d4",
-    "to": "c2",
-    "san": "Nxc2",
-    "fen": "r4rk1/pp2qppp/3pb3/2p5/4PNn1/2NP2P1/PPn3BP/R3QRK1 w - - 0 14",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Win material",
-  "youPlayed": "a6",
-  "sourceUrl": "https://lichess.org/AKW6ZayR",
-  "moveNo": 13,
-  "explain": "You played a6. The engine's Nxc2 gains about +2.9."
- },
- {
-  "id": "p16",
-  "fen": "5rk1/2r1qppp/4p3/1p1bN3/p2P1Q2/P5P1/1P3P1P/2RR2K1 w - - 3 24",
-  "sideToMove": "w",
-  "userColor": "w",
-  "line": [
-   {
-    "uci": "e5g6",
-    "from": "e5",
-    "to": "g6",
-    "san": "Ng6",
-    "fen": "5rk1/2r1qppp/4p1N1/1p1b4/p2P1Q2/P5P1/1P3P1P/2RR2K1 b - - 4 24",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "Ng4",
-  "sourceUrl": "https://lichess.org/wMjEuKaT",
-  "moveNo": 24,
-  "explain": "You played Ng4. The engine's Ng6 gains about +2.1."
- },
- {
-  "id": "p17",
-  "fen": "2rq3r/1p2kp1p/p1bppp2/8/PP2P3/2P2N2/3Q1PPP/RR4K1 b - - 2 16",
-  "sideToMove": "b",
-  "userColor": "b",
-  "line": [
-   {
-    "uci": "c6e4",
-    "from": "c6",
-    "to": "e4",
-    "san": "Bxe4",
-    "fen": "2rq3r/1p2kp1p/p2ppp2/8/PP2b3/2P2N2/3Q1PPP/RR4K1 w - - 0 17",
-    "user": true,
-    "promo": null
-   },
-   {
-    "uci": "b1e1",
-    "from": "b1",
-    "to": "e1",
-    "san": "Re1",
-    "fen": "2rq3r/1p2kp1p/p2ppp2/8/PP2b3/2P2N2/3Q1PPP/R3R1K1 b - - 1 17",
-    "user": false,
-    "promo": null
-   },
-   {
-    "uci": "e4f3",
-    "from": "e4",
-    "to": "f3",
-    "san": "Bxf3",
-    "fen": "2rq3r/1p2kp1p/p2ppp2/8/PP6/2P2b2/3Q1PPP/R3R1K1 w - - 0 18",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Win material",
-  "youPlayed": "e5",
-  "sourceUrl": "https://lichess.org/6A2E3M4M",
-  "moveNo": 16,
-  "explain": "You played e5. The engine's Bxe4 gains about +2.6."
- },
- {
-  "id": "p18",
-  "fen": "8/1r2p3/4k2P/8/2p5/5RB1/2r3p1/K5R1 w - - 1 58",
-  "sideToMove": "w",
-  "userColor": "w",
-  "line": [
-   {
-    "uci": "h6h7",
-    "from": "h6",
-    "to": "h7",
-    "san": "h7",
-    "fen": "8/1r2p2P/4k3/8/2p5/5RB1/2r3p1/K5R1 b - - 0 58",
-    "user": true,
-    "promo": null
-   },
-   {
-    "uci": "c4c3",
-    "from": "c4",
-    "to": "c3",
-    "san": "c3",
-    "fen": "8/1r2p2P/4k3/8/8/2p2RB1/2r3p1/K5R1 w - - 0 59",
-    "user": false,
-    "promo": null
-   },
-   {
-    "uci": "f3f2",
-    "from": "f3",
-    "to": "f2",
-    "san": "Rf2",
-    "fen": "8/1r2p2P/4k3/8/8/2p3B1/2r2Rp1/K5R1 b - - 1 59",
-    "user": true,
-    "promo": null
-   }
-  ],
-  "motif": "Best move",
-  "youPlayed": "Re3+",
-  "sourceUrl": "https://lichess.org/uKRxoCml",
-  "moveNo": 58,
-  "explain": "You played Re3+. The engine's h7 gains about +4.2."
- }
-];
+let PUZZLES = /*PUZZLES*/[{"id":"p1","fen":"r1bq1rk1/5ppp/3p1bP1/2pN4/4PP2/1P2BQP1/1pP1B3/2KR3R w - - 0 21","sideToMove":"w","userColor":"w","line":[{"uci":"c1d2","from":"c1","to":"d2","san":"Kd2","fen":"r1bq1rk1/5ppp/3p1bP1/2pN4/4PP2/1P2BQP1/1pPKB3/3R3R b - - 1 21","user":true,"promo":null}],"motif":"Best move","youPlayed":"Kb1","sourceUrl":"https://lichess.org/TlrKodp7","moveNo":21,"explain":"You played Kb1. The engine's Kd2 gains about +2.7.","phase":"middlegame","cat":"tactics"},{"id":"p2","fen":"3r4/1p3k1p/3p1P2/2p5/2Nn4/7P/1r4P1/3R1RK1 w - - 1 26","sideToMove":"w","userColor":"w","line":[{"uci":"c4b2","from":"c4","to":"b2","san":"Nxb2","fen":"3r4/1p3k1p/3p1P2/2p5/3n4/7P/1N4P1/3R1RK1 b - - 0 26","user":true,"promo":null}],"motif":"Win material","youPlayed":"Rde1","sourceUrl":"https://lichess.org/AkzPEDRx","moveNo":26,"explain":"You played Rde1. The engine's Nxb2 gains about +4.8.","phase":"middlegame","cat":"tactics"},{"id":"p3","fen":"r2qk2r/p3bppp/1p2p1b1/2ppn1B1/4PPB1/2PP4/PP1N1QPP/2KR2NR b kq - 0 14","sideToMove":"b","userColor":"b","line":[{"uci":"e5d3","from":"e5","to":"d3","san":"Nxd3+","fen":"r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2Pn4/PP1N1QPP/2KR2NR w kq - 0 15","user":true,"promo":null},{"uci":"c1c2","from":"c1","to":"c2","san":"Kc2","fen":"r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2Pn4/PPKN1QPP/3R2NR b kq - 1 15","user":false,"promo":null},{"uci":"d3f2","from":"d3","to":"f2","san":"Nxf2","fen":"r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPB1/2P5/PPKN1nPP/3R2NR w kq - 0 16","user":true,"promo":null}],"motif":"Win material","youPlayed":"Nxg4","sourceUrl":"https://lichess.org/fmb3X4RJ","moveNo":14,"explain":"You played Nxg4. The engine's Nxd3+ gains about +6.6.","phase":"middlegame","cat":"tactics"},{"id":"p4","fen":"8/8/1p1p1R2/p5pp/2P1k3/PP6/2r3PP/3K4 w - - 0 35","sideToMove":"w","userColor":"w","line":[{"uci":"d1c2","from":"d1","to":"c2","san":"Kxc2","fen":"8/8/1p1p1R2/p5pp/2P1k3/PP6/2K3PP/8 b - - 0 35","user":true,"promo":null}],"motif":"Win material","youPlayed":"Rxd6","sourceUrl":"https://lichess.org/5ZaKAx7t","moveNo":35,"explain":"You played Rxd6. The engine's Kxc2 gains about +5.7.","phase":"endgame","cat":"endgame"},{"id":"p5","fen":"8/1n3k2/1B2b2p/p1p1Pp2/PPP2P2/1P1K3P/8/8 b - - 0 32","sideToMove":"b","userColor":"b","line":[{"uci":"c5b4","from":"c5","to":"b4","san":"cxb4","fen":"8/1n3k2/1B2b2p/p3Pp2/PpP2P2/1P1K3P/8/8 w - - 0 33","user":true,"promo":null}],"motif":"Win material","youPlayed":"axb4","sourceUrl":"https://lichess.org/SqTtPcmZ","moveNo":32,"explain":"You played axb4. The engine's cxb4 gains about +2.4.","phase":"endgame","cat":"endgame"},{"id":"p6","fen":"8/6pp/p4qk1/3b4/PPp5/2Pp2QP/6P1/4rNK1 b - - 5 36","sideToMove":"b","userColor":"b","line":[{"uci":"f6g5","from":"f6","to":"g5","san":"Qg5","fen":"8/6pp/p5k1/3b2q1/PPp5/2Pp2QP/6P1/4rNK1 w - - 6 37","user":true,"promo":null}],"motif":"Best move","youPlayed":"Kh6","sourceUrl":"https://lichess.org/4Z4aLsuU","moveNo":36,"explain":"You played Kh6. The engine's Qg5 gains about +6.2.","phase":"middlegame","cat":"tactics"},{"id":"p7","fen":"8/8/3p4/1p6/2k5/2P5/1K6/8 b - - 5 59","sideToMove":"b","userColor":"b","line":[{"uci":"c4d3","from":"c4","to":"d3","san":"Kd3","fen":"8/8/3p4/1p6/8/2Pk4/1K6/8 w - - 6 60","user":true,"promo":null},{"uci":"b2b3","from":"b2","to":"b3","san":"Kb3","fen":"8/8/3p4/1p6/8/1KPk4/8/8 b - - 7 60","user":false,"promo":null},{"uci":"d6d5","from":"d6","to":"d5","san":"d5","fen":"8/8/8/1p1p4/8/1KPk4/8/8 w - - 0 61","user":true,"promo":null}],"motif":"Best move","youPlayed":"d5","sourceUrl":"https://lichess.org/AKW6ZayR","moveNo":59,"explain":"You played d5. The engine's Kd3 gains about +9.7.","phase":"endgame","cat":"endgame"},{"id":"p8","fen":"6k1/R5p1/7p/7P/6P1/8/p4K2/r7 b - - 3 43","sideToMove":"b","userColor":"b","line":[{"uci":"a1h1","from":"a1","to":"h1","san":"Rh1","fen":"6k1/R5p1/7p/7P/6P1/8/p4K2/7r w - - 4 44","user":true,"promo":null}],"motif":"Best move","youPlayed":"Kf8","sourceUrl":"https://lichess.org/mOokATB5","moveNo":43,"explain":"You played Kf8. The engine's Rh1 gains about +5.7.","phase":"endgame","cat":"endgame"},{"id":"p9","fen":"r4rk1/3q1pp1/pN1p4/1p6/2pnP1p1/P2P2P1/1PP4P/2R1QRK1 b - - 1 20","sideToMove":"b","userColor":"b","line":[{"uci":"d7a7","from":"d7","to":"a7","san":"Qa7","fen":"r4rk1/q4pp1/pN1p4/1p6/2pnP1p1/P2P2P1/1PP4P/2R1QRK1 w - - 2 21","user":true,"promo":null}],"motif":"Best move","youPlayed":"Qe6","sourceUrl":"https://lichess.org/AKW6ZayR","moveNo":20,"explain":"You played Qe6. The engine's Qa7 gains about +4.0.","phase":"middlegame","cat":"tactics"},{"id":"p10","fen":"r1b3k1/4rpbp/p1q1p1p1/1p2P1N1/N1B5/1P6/P3QPPP/R4RK1 w - - 0 18","sideToMove":"w","userColor":"w","line":[{"uci":"c4d3","from":"c4","to":"d3","san":"Bd3","fen":"r1b3k1/4rpbp/p1q1p1p1/1p2P1N1/N7/1P1B4/P3QPPP/R4RK1 b - - 1 18","user":true,"promo":null},{"uci":"c8b7","from":"c8","to":"b7","san":"Bb7","fen":"r5k1/1b2rpbp/p1q1p1p1/1p2P1N1/N7/1P1B4/P3QPPP/R4RK1 w - - 2 19","user":false,"promo":null},{"uci":"d3e4","from":"d3","to":"e4","san":"Be4","fen":"r5k1/1b2rpbp/p1q1p1p1/1p2P1N1/N3B3/1P6/P3QPPP/R4RK1 b - - 3 19","user":true,"promo":null}],"motif":"Best move","youPlayed":"Rac1","sourceUrl":"https://lichess.org/Hj7jrZnr","moveNo":18,"explain":"You played Rac1. The engine's Bd3 gains about +4.7.","phase":"middlegame","cat":"tactics"},{"id":"p11","fen":"6k1/4bp2/p2p4/Qp1PpP2/5qB1/7K/PP3PP1/8 b - - 4 29","sideToMove":"b","userColor":"b","line":[{"uci":"f4h6","from":"f4","to":"h6","san":"Qh6+","fen":"6k1/4bp2/p2p3q/Qp1PpP2/6B1/7K/PP3PP1/8 w - - 5 30","user":true,"promo":null}],"motif":"Forcing tactic","youPlayed":"Qxf2","sourceUrl":"https://lichess.org/umPVXsPd","moveNo":29,"explain":"You played Qxf2. The engine's Qh6+ gains about +6.0.","phase":"middlegame","cat":"tactics"},{"id":"p12","fen":"r4rk1/1b2bppp/4p3/p7/1p2PB2/1P3N2/1PP2PPP/3RR1K1 w - - 0 17","sideToMove":"w","userColor":"w","line":[{"uci":"d1d7","from":"d1","to":"d7","san":"Rd7","fen":"r4rk1/1b1Rbppp/4p3/p7/1p2PB2/1P3N2/1PP2PPP/4R1K1 b - - 1 17","user":true,"promo":null}],"motif":"Best move","youPlayed":"Nd2","sourceUrl":"https://lichess.org/1hM59Rp3","moveNo":17,"explain":"You played Nd2. The engine's Rd7 gains about +4.5.","phase":"middlegame","cat":"tactics"},{"id":"p13","fen":"2r4r/1p1qkp1p/p2p1p2/4p3/PPP5/5P2/3Q1P1P/R1R3K1 b - - 2 20","sideToMove":"b","userColor":"b","line":[{"uci":"d7h3","from":"d7","to":"h3","san":"Qh3","fen":"2r4r/1p2kp1p/p2p1p2/4p3/PPP5/5P1q/3Q1P1P/R1R3K1 w - - 3 21","user":true,"promo":null}],"motif":"Best move","youPlayed":"Rhg8+","sourceUrl":"https://lichess.org/6A2E3M4M","moveNo":20,"explain":"You played Rhg8+. The engine's Qh3 gains about +7.5.","phase":"middlegame","cat":"tactics"},{"id":"p14","fen":"r3r1k1/pp2q1pp/3b4/1PpP1p2/2P1p3/1PN4P/4QPP1/4RRK1 b - - 1 20","sideToMove":"b","userColor":"b","line":[{"uci":"e7e5","from":"e7","to":"e5","san":"Qe5","fen":"r3r1k1/pp4pp/3b4/1PpPqp2/2P1p3/1PN4P/4QPP1/4RRK1 w - - 2 21","user":true,"promo":null},{"uci":"f2f4","from":"f2","to":"f4","san":"f4","fen":"r3r1k1/pp4pp/3b4/1PpPqp2/2P1pP2/1PN4P/4Q1P1/4RRK1 b - f3 0 21","user":false,"promo":null},{"uci":"e5c3","from":"e5","to":"c3","san":"Qxc3","fen":"r3r1k1/pp4pp/3b4/1PpP1p2/2P1pP2/1Pq4P/4Q1P1/4RRK1 w - - 0 22","user":true,"promo":null}],"motif":"Best move","youPlayed":"Be5","sourceUrl":"https://lichess.org/t632fav9","moveNo":20,"explain":"You played Be5. The engine's Qe5 gains about +5.1.","phase":"middlegame","cat":"tactics"},{"id":"p15","fen":"r4rk1/pp2qppp/3pb3/2p5/3nPNn1/2NP2P1/PPP3BP/R3QRK1 b - - 3 13","sideToMove":"b","userColor":"b","line":[{"uci":"d4c2","from":"d4","to":"c2","san":"Nxc2","fen":"r4rk1/pp2qppp/3pb3/2p5/4PNn1/2NP2P1/PPn3BP/R3QRK1 w - - 0 14","user":true,"promo":null}],"motif":"Win material","youPlayed":"a6","sourceUrl":"https://lichess.org/AKW6ZayR","moveNo":13,"explain":"You played a6. The engine's Nxc2 gains about +2.9.","phase":"middlegame","cat":"tactics"},{"id":"p16","fen":"5rk1/2r1qppp/4p3/1p1bN3/p2P1Q2/P5P1/1P3P1P/2RR2K1 w - - 3 24","sideToMove":"w","userColor":"w","line":[{"uci":"e5g6","from":"e5","to":"g6","san":"Ng6","fen":"5rk1/2r1qppp/4p1N1/1p1b4/p2P1Q2/P5P1/1P3P1P/2RR2K1 b - - 4 24","user":true,"promo":null}],"motif":"Best move","youPlayed":"Ng4","sourceUrl":"https://lichess.org/wMjEuKaT","moveNo":24,"explain":"You played Ng4. The engine's Ng6 gains about +2.1.","phase":"middlegame","cat":"tactics"},{"id":"p17","fen":"2rq3r/1p2kp1p/p1bppp2/8/PP2P3/2P2N2/3Q1PPP/RR4K1 b - - 2 16","sideToMove":"b","userColor":"b","line":[{"uci":"c6e4","from":"c6","to":"e4","san":"Bxe4","fen":"2rq3r/1p2kp1p/p2ppp2/8/PP2b3/2P2N2/3Q1PPP/RR4K1 w - - 0 17","user":true,"promo":null},{"uci":"b1e1","from":"b1","to":"e1","san":"Re1","fen":"2rq3r/1p2kp1p/p2ppp2/8/PP2b3/2P2N2/3Q1PPP/R3R1K1 b - - 1 17","user":false,"promo":null},{"uci":"e4f3","from":"e4","to":"f3","san":"Bxf3","fen":"2rq3r/1p2kp1p/p2ppp2/8/PP6/2P2b2/3Q1PPP/R3R1K1 w - - 0 18","user":true,"promo":null}],"motif":"Win material","youPlayed":"e5","sourceUrl":"https://lichess.org/6A2E3M4M","moveNo":16,"explain":"You played e5. The engine's Bxe4 gains about +2.6.","phase":"middlegame","cat":"tactics"},{"id":"p18","fen":"8/1r2p3/4k2P/8/2p5/5RB1/2r3p1/K5R1 w - - 1 58","sideToMove":"w","userColor":"w","line":[{"uci":"h6h7","from":"h6","to":"h7","san":"h7","fen":"8/1r2p2P/4k3/8/2p5/5RB1/2r3p1/K5R1 b - - 0 58","user":true,"promo":null},{"uci":"c4c3","from":"c4","to":"c3","san":"c3","fen":"8/1r2p2P/4k3/8/8/2p2RB1/2r3p1/K5R1 w - - 0 59","user":false,"promo":null},{"uci":"f3f2","from":"f3","to":"f2","san":"Rf2","fen":"8/1r2p2P/4k3/8/8/2p3B1/2r2Rp1/K5R1 b - - 1 59","user":true,"promo":null}],"motif":"Best move","youPlayed":"Re3+","sourceUrl":"https://lichess.org/uKRxoCml","moveNo":58,"explain":"You played Re3+. The engine's h7 gains about +4.2.","phase":"middlegame","cat":"tactics"},{"id":"eb4","fen":"8/p4kpp/5p2/4pN2/1P2P3/8/2r1nP2/3R1K2 b - - 7 30","sideToMove":"b","userColor":"b","line":[{"uci":"e2f4","from":"e2","to":"f4","san":"Nf4","fen":"8/p4kpp/5p2/4pN2/1P2Pn2/8/2r2P2/3R1K2 w - - 8 31","user":true,"promo":null}],"motif":"Best move","cat":"endgame","phase":"endgame","youPlayed":"Kg6","sourceUrl":"https://lichess.org/VKABXakj","moveNo":30,"explain":"You played Kg6. The engine's Nf4 gains about +3.0."},{"id":"er1","fen":"4k3/1N3pp1/5p1p/r2R4/2P5/2b1P1PP/5PK1/8 b - - 6 30","sideToMove":"b","userColor":"b","line":[{"uci":"a5d5","from":"a5","to":"d5","san":"Rxd5","fen":"4k3/1N3pp1/5p1p/3r4/2P5/2b1P1PP/5PK1/8 w - - 0 31","user":true,"promo":null},{"uci":"c4d5","from":"c4","to":"d5","san":"cxd5","fen":"4k3/1N3pp1/5p1p/3P4/8/2b1P1PP/5PK1/8 b - - 0 31","user":false,"promo":null},{"uci":"c3b4","from":"c3","to":"b4","san":"Bb4","fen":"4k3/1N3pp1/5p1p/3P4/1b6/4P1PP/5PK1/8 w - - 1 32","user":true,"promo":null}],"motif":"Win material","cat":"endgame","phase":"endgame","youPlayed":"Ra2","sourceUrl":"https://lichess.org/cMysDu3v","moveNo":30,"explain":"You played Ra2. The engine's Rxd5 gains about +3.0."},{"id":"er2","fen":"5r2/2PB4/7R/8/6n1/3K2k1/7p/8 w - - 8 54","sideToMove":"w","userColor":"w","line":[{"uci":"d7g4","from":"d7","to":"g4","san":"Bxg4","fen":"5r2/2P5/7R/8/6B1/3K2k1/7p/8 b - - 0 54","user":true,"promo":null},{"uci":"g3g4","from":"g3","to":"g4","san":"Kxg4","fen":"5r2/2P5/7R/8/6k1/3K4/7p/8 w - - 0 55","user":false,"promo":null},{"uci":"h6h2","from":"h6","to":"h2","san":"Rxh2","fen":"5r2/2P5/8/8/6k1/3K4/7R/8 b - - 0 55","user":true,"promo":null}],"motif":"Win material","cat":"endgame","phase":"endgame","youPlayed":"c8=Q","sourceUrl":"https://lichess.org/vfneLRNq","moveNo":54,"explain":"You played c8=Q. The engine's Bxg4 gains about +4.6."},{"id":"er3","fen":"5r2/2P5/2B4R/8/8/3Kn1k1/7p/8 w - - 6 53","sideToMove":"w","userColor":"w","line":[{"uci":"d3e3","from":"d3","to":"e3","san":"Kxe3","fen":"5r2/2P5/2B4R/8/8/4K1k1/7p/8 b - - 0 53","user":true,"promo":null}],"motif":"Win material","cat":"endgame","phase":"endgame","youPlayed":"Bd7","sourceUrl":"https://lichess.org/vfneLRNq","moveNo":53,"explain":"You played Bd7. The engine's Kxe3 gains about +5.3."},{"id":"er4","fen":"8/7p/3pk3/p5p1/P2K1P2/3P2P1/8/8 w - - 0 34","sideToMove":"w","userColor":"w","line":[{"uci":"f4g5","from":"f4","to":"g5","san":"fxg5","fen":"8/7p/3pk3/p5P1/P2K4/3P2P1/8/8 b - - 0 34","user":true,"promo":null},{"uci":"e6f5","from":"e6","to":"f5","san":"Kf5","fen":"8/7p/3p4/p4kP1/P2K4/3P2P1/8/8 w - - 1 35","user":false,"promo":null},{"uci":"d4c4","from":"d4","to":"c4","san":"Kc4","fen":"8/7p/3p4/p4kP1/P1K5/3P2P1/8/8 b - - 2 35","user":true,"promo":null}],"motif":"Win material","cat":"endgame","phase":"endgame","youPlayed":"Ke4","sourceUrl":"https://lichess.org/xgI281eu","moveNo":34,"explain":"You played Ke4. The engine's fxg5 gains about +5.0."},{"id":"er5","fen":"8/1pk5/8/2P5/3r4/R5p1/6K1/8 b - - 0 51","sideToMove":"b","userColor":"b","line":[{"uci":"c7c6","from":"c7","to":"c6","san":"Kc6","fen":"8/1p6/2k5/2P5/3r4/R5p1/6K1/8 w - - 1 52","user":true,"promo":null},{"uci":"a3b3","from":"a3","to":"b3","san":"Rb3","fen":"8/1p6/2k5/2P5/3r4/1R4p1/6K1/8 b - - 2 52","user":false,"promo":null},{"uci":"d4d7","from":"d4","to":"d7","san":"Rd7","fen":"8/1p1r4/2k5/2P5/8/1R4p1/6K1/8 w - - 3 53","user":true,"promo":null}],"motif":"Best move","cat":"endgame","phase":"endgame","youPlayed":"Rc4","sourceUrl":"https://lichess.org/EFDmLVep","moveNo":51,"explain":"You played Rc4. The engine's Kc6 gains about +4.4."},{"id":"er6","fen":"8/pp2R2k/2p4p/8/6KP/8/8/r7 b - - 4 38","sideToMove":"b","userColor":"b","line":[{"uci":"h7g6","from":"h7","to":"g6","san":"Kg6","fen":"8/pp2R3/2p3kp/8/6KP/8/8/r7 w - - 5 39","user":true,"promo":null}],"motif":"Best move","cat":"endgame","phase":"endgame","youPlayed":"Kh8","sourceUrl":"https://lichess.org/M7SrFUjN","moveNo":38,"explain":"You played Kh8. The engine's Kg6 gains about +2.8."},{"id":"r1","fen":"r2q1rk1/pp2b1pp/4pp2/3pP2Q/2pPn3/2P1P2R/PP4PP/RNB3K1 b - - 1 14","sideToMove":"b","userColor":"b","line":[{"uci":"e4g5","from":"e4","to":"g5","san":"Ng5","fen":"r2q1rk1/pp2b1pp/4pp2/3pP1nQ/2pP4/2P1P2R/PP4PP/RNB3K1 w - - 2 15","user":true,"promo":null}],"motif":"Best move","cat":"tactics","phase":"middlegame","youPlayed":"g6","sourceUrl":"https://lichess.org/RhAFYYuq","moveNo":14,"explain":"You played g6. The engine's Ng5 gains about +2.9."},{"id":"r2","fen":"8/8/6pk/1p6/1q1Q4/4P2P/5PPK/8 b - - 1 33","sideToMove":"b","userColor":"b","line":[{"uci":"b4d4","from":"b4","to":"d4","san":"Qxd4","fen":"8/8/6pk/1p6/3q4/4P2P/5PPK/8 w - - 0 34","user":true,"promo":null}],"motif":"Win material","cat":"tactics","phase":"middlegame","youPlayed":"Qc4","sourceUrl":"https://lichess.org/46ulPSZg","moveNo":33,"explain":"You played Qc4. The engine's Qxd4 gains about +4.6."},{"id":"r3","fen":"r1bqk2r/ppp3pp/8/2bp1p2/2BNn3/8/PP3PPP/RNBQR1K1 w kq - 0 10","sideToMove":"w","userColor":"w","line":[{"uci":"b1c3","from":"b1","to":"c3","san":"Nc3","fen":"r1bqk2r/ppp3pp/8/2bp1p2/2BNn3/2N5/PP3PPP/R1BQR1K1 b kq - 1 10","user":true,"promo":null}],"motif":"Best move","cat":"tactics","phase":"opening","youPlayed":"Nxf5","sourceUrl":"https://lichess.org/rE1EFaWC","moveNo":10,"explain":"You played Nxf5. The engine's Nc3 gains about +4.4."},{"id":"r4","fen":"8/p3Qp1p/2q3p1/4pk2/2b5/P1p3KP/2R5/8 b - - 5 39","sideToMove":"b","userColor":"b","line":[{"uci":"c6b6","from":"c6","to":"b6","san":"Qb6","fen":"8/p3Qp1p/1q4p1/4pk2/2b5/P1p3KP/2R5/8 w - - 6 40","user":true,"promo":null}],"motif":"Best move","cat":"tactics","phase":"middlegame","youPlayed":"Qe4","sourceUrl":"https://lichess.org/0gJMDEL6","moveNo":39,"explain":"You played Qe4. The engine's Qb6 gains about +3.2."},{"id":"r6","fen":"5rk1/pQRN2p1/4p2p/3p2q1/8/P5P1/1P3r1P/4R1K1 b - - 0 25","sideToMove":"b","userColor":"b","line":[{"uci":"g5d2","from":"g5","to":"d2","san":"Qd2","fen":"5rk1/pQRN2p1/4p2p/3p4/8/P5P1/1P1q1r1P/4R1K1 w - - 1 26","user":true,"promo":null},{"uci":"d7f6","from":"d7","to":"f6","san":"Nf6+","fen":"5rk1/pQR3p1/4pN1p/3p4/8/P5P1/1P1q1r1P/4R1K1 b - - 2 26","user":false,"promo":null},{"uci":"g8h8","from":"g8","to":"h8","san":"Kh8","fen":"5r1k/pQR3p1/4pN1p/3p4/8/P5P1/1P1q1r1P/4R1K1 w - - 3 27","user":true,"promo":null}],"motif":"Best move","cat":"tactics","phase":"middlegame","youPlayed":"R8f7","sourceUrl":"https://lichess.org/VmziVvW4","moveNo":25,"explain":"You played R8f7. The engine's Qd2 forces mate."},{"id":"r7","fen":"r2q1rk1/1pp1bppp/p3bn2/4N1B1/4P3/1PNP4/1PP3PP/R2Q1RK1 b - - 2 12","sideToMove":"b","userColor":"b","line":[{"uci":"d8d4","from":"d8","to":"d4","san":"Qd4+","fen":"r4rk1/1pp1bppp/p3bn2/4N1B1/3qP3/1PNP4/1PP3PP/R2Q1RK1 w - - 3 13","user":true,"promo":null},{"uci":"g1h1","from":"g1","to":"h1","san":"Kh1","fen":"r4rk1/1pp1bppp/p3bn2/4N1B1/3qP3/1PNP4/1PP3PP/R2Q1R1K b - - 4 13","user":false,"promo":null},{"uci":"d4e5","from":"d4","to":"e5","san":"Qxe5","fen":"r4rk1/1pp1bppp/p3bn2/4q1B1/4P3/1PNP4/1PP3PP/R2Q1R1K w - - 0 14","user":true,"promo":null}],"motif":"Forcing tactic","cat":"tactics","phase":"opening","youPlayed":"Qd6","sourceUrl":"https://lichess.org/DtOTTcpg","moveNo":12,"explain":"You played Qd6. The engine's Qd4+ gains about +3.8."},{"id":"r8","fen":"r2qk2r/1pp1bppp/p3bn2/4N3/4P3/1PNP4/1PP3PP/R1BQ1RK1 b kq - 0 11","sideToMove":"b","userColor":"b","line":[{"uci":"d8d4","from":"d8","to":"d4","san":"Qd4+","fen":"r3k2r/1pp1bppp/p3bn2/4N3/3qP3/1PNP4/1PP3PP/R1BQ1RK1 w kq - 1 12","user":true,"promo":null},{"uci":"g1h1","from":"g1","to":"h1","san":"Kh1","fen":"r3k2r/1pp1bppp/p3bn2/4N3/3qP3/1PNP4/1PP3PP/R1BQ1R1K b kq - 2 12","user":false,"promo":null},{"uci":"d4e5","from":"d4","to":"e5","san":"Qxe5","fen":"r3k2r/1pp1bppp/p3bn2/4q3/4P3/1PNP4/1PP3PP/R1BQ1R1K w kq - 0 13","user":true,"promo":null}],"motif":"Forcing tactic","cat":"tactics","phase":"opening","youPlayed":"O-O","sourceUrl":"https://lichess.org/DtOTTcpg","moveNo":11,"explain":"You played O-O. The engine's Qd4+ gains about +3.2."},{"id":"r9","fen":"r1b1k1nr/pppp1p1p/2n5/8/3PP3/2bK1QB1/Pq4PP/RN1B1R2 b kq - 1 13","sideToMove":"b","userColor":"b","line":[{"uci":"c6b4","from":"c6","to":"b4","san":"Nb4+","fen":"r1b1k1nr/pppp1p1p/8/8/1n1PP3/2bK1QB1/Pq4PP/RN1B1R2 w kq - 2 14","user":true,"promo":null},{"uci":"d3e3","from":"d3","to":"e3","san":"Ke3","fen":"r1b1k1nr/pppp1p1p/8/8/1n1PP3/2b1KQB1/Pq4PP/RN1B1R2 b kq - 3 14","user":false,"promo":null},{"uci":"c3d4","from":"c3","to":"d4","san":"Bxd4+","fen":"r1b1k1nr/pppp1p1p/8/8/1n1bP3/4KQB1/Pq4PP/RN1B1R2 w kq - 0 15","user":true,"promo":null}],"motif":"Forcing tactic","cat":"tactics","phase":"middlegame","youPlayed":"Qb5+","sourceUrl":"https://lichess.org/hnGparWx","moveNo":13,"explain":"You played Qb5+. The engine's Nb4+ gains about +9.3."},{"id":"r10","fen":"5Q2/1R5p/3p2p1/r2qp2k/P4p2/5P1P/6P1/6K1 w - - 6 47","sideToMove":"w","userColor":"w","line":[{"uci":"b7h7","from":"b7","to":"h7","san":"Rxh7+","fen":"5Q2/7R/3p2p1/r2qp2k/P4p2/5P1P/6P1/6K1 b - - 0 47","user":true,"promo":null}],"motif":"Win material","cat":"tactics","phase":"middlegame","youPlayed":"Qg7","sourceUrl":"https://lichess.org/LAmg7jHR","moveNo":47,"explain":"You played Qg7. The engine's Rxh7+ forces mate."},{"id":"r11","fen":"2k4r/1pp2p2/p2r1n1p/3p2p1/b1PB4/2RB1P2/5KPP/1R6 w - - 2 22","sideToMove":"w","userColor":"w","line":[{"uci":"c4c5","from":"c4","to":"c5","san":"c5","fen":"2k4r/1pp2p2/p2r1n1p/2Pp2p1/b2B4/2RB1P2/5KPP/1R6 b - - 0 22","user":true,"promo":null}],"motif":"Best move","cat":"tactics","phase":"middlegame","youPlayed":"Bf5+","sourceUrl":"https://lichess.org/E3lKaSbi","moveNo":22,"explain":"You played Bf5+. The engine's c5 gains about +3.8."},{"id":"r12","fen":"rn1qkbnr/pp1b1p1p/2p3p1/7Q/2B1PP2/2N5/PPPB2PP/R3K2R w KQkq - 0 11","sideToMove":"w","userColor":"w","line":[{"uci":"h5e5","from":"h5","to":"e5","san":"Qe5+","fen":"rn1qkbnr/pp1b1p1p/2p3p1/4Q3/2B1PP2/2N5/PPPB2PP/R3K2R b KQkq - 1 11","user":true,"promo":null}],"motif":"Forcing tactic","cat":"tactics","phase":"opening","youPlayed":"Qf3","sourceUrl":"https://lichess.org/agYMMDsO","moveNo":11,"explain":"You played Qf3. The engine's Qe5+ gains about +2.5."},{"id":"r14","fen":"rnb1k1r1/pp2np1p/2pp1b2/q5B1/2B1PQ2/5N2/PPP2PPP/RN2K2R w KQq - 7 10","sideToMove":"w","userColor":"w","line":[{"uci":"b2b4","from":"b2","to":"b4","san":"b4","fen":"rnb1k1r1/pp2np1p/2pp1b2/q5B1/1PB1PQ2/5N2/P1P2PPP/RN2K2R b KQq - 0 10","user":true,"promo":null},{"uci":"a5b4","from":"a5","to":"b4","san":"Qxb4+","fen":"rnb1k1r1/pp2np1p/2pp1b2/6B1/1qB1PQ2/5N2/P1P2PPP/RN2K2R w KQq - 0 11","user":false,"promo":null},{"uci":"b1d2","from":"b1","to":"d2","san":"Nbd2","fen":"rnb1k1r1/pp2np1p/2pp1b2/6B1/1qB1PQ2/5N2/P1PN1PPP/R3K2R b KQq - 1 11","user":true,"promo":null}],"motif":"Best move","cat":"tactics","phase":"opening","youPlayed":"Nc3","sourceUrl":"https://lichess.org/14dhQEnA","moveNo":10,"explain":"You played Nc3. The engine's b4 gains about +3.2."},{"id":"r15","fen":"rnbqk1nr/pp3pQp/2pp1b2/8/2B1P3/5N2/PPP2PPP/RNB1K2R w KQkq - 1 7","sideToMove":"w","userColor":"w","line":[{"uci":"g7f7","from":"g7","to":"f7","san":"Qxf7#","fen":"rnbqk1nr/pp3Q1p/2pp1b2/8/2B1P3/5N2/PPP2PPP/RNB1K2R b KQkq - 0 7","user":true,"promo":null}],"motif":"Mate in 1","cat":"tactics","phase":"opening","youPlayed":"Qg3","sourceUrl":"https://lichess.org/14dhQEnA","moveNo":7,"explain":"You played Qg3. The engine's Qxf7# forces mate."},{"id":"r18","fen":"2kr3r/ppp1qp1p/5n2/8/4P3/3BQ3/PPPN2PP/2KR4 b - - 0 15","sideToMove":"b","userColor":"b","line":[{"uci":"c8b8","from":"c8","to":"b8","san":"Kb8","fen":"1k1r3r/ppp1qp1p/5n2/8/4P3/3BQ3/PPPN2PP/2KR4 w - - 1 16","user":true,"promo":null}],"motif":"Best move","cat":"tactics","phase":"middlegame","youPlayed":"Rhg8","sourceUrl":"https://lichess.org/WyR03H0M","moveNo":15,"explain":"You played Rhg8. The engine's Kb8 gains about +2.3."},{"id":"r19","fen":"3r1k2/R5bp/2p2np1/2Nbp3/8/4B3/1rP2PPP/3R2K1 w - - 1 20","sideToMove":"w","userColor":"w","line":[{"uci":"c5e6","from":"c5","to":"e6","san":"Ne6+","fen":"3r1k2/R5bp/2p1Nnp1/3bp3/8/4B3/1rP2PPP/3R2K1 b - - 2 20","user":true,"promo":null},{"uci":"f8g8","from":"f8","to":"g8","san":"Kg8","fen":"3r2k1/R5bp/2p1Nnp1/3bp3/8/4B3/1rP2PPP/3R2K1 w - - 3 21","user":false,"promo":null},{"uci":"e6d8","from":"e6","to":"d8","san":"Nxd8","fen":"3N2k1/R5bp/2p2np1/3bp3/8/4B3/1rP2PPP/3R2K1 b - - 0 21","user":true,"promo":null}],"motif":"Forcing tactic","cat":"tactics","phase":"middlegame","youPlayed":"c4","sourceUrl":"https://lichess.org/nFicI1wk","moveNo":20,"explain":"You played c4. The engine's Ne6+ gains about +2.8."}];
 const BASE={rating:1750,acpl:55,blunders:0.65}, TARGET={acpl:42,blunders:0.40};
 const CCT=["Checks — every check they have against you","Captures — everything they can take, free or via tactic","Threats — what they're setting up if you do nothing"];
 const WEEKLY=[
@@ -721,6 +232,7 @@ function save(){STATE.updated=new Date().toISOString();try{localStorage.setItem(
 let STATE=load()||{version:5,player:"jbensamo",checks:{},habitDays:{},sessions:[],
   puzzles:{solved:{},attempts:{},firstTry:{}},updated:null};
 STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};
+STATE.homework=STATE.homework||{};
 
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 function todayISO(){return new Date().toISOString().slice(0,10);}
@@ -758,23 +270,101 @@ function drawBoard(fen,orient,opts){
 
 /* ---------- puzzle engine ---------- */
 let cur={idx:0,ply:0,await:false,sel:null,fen:null,wrong:false,hint:null,done:false};
-function firstUnsolved(){for(let i=0;i<PUZZLES.length;i++)if(!STATE.puzzles.solved[PUZZLES[i].id])return i;return 0;}
+/* ---------- puzzle sets ----------
+   PUZZLES is every puzzle; ACTIVE is the set currently being trained. Puzzle
+   navigation indexes ACTIVE — overall progress on the Home tab still counts
+   PUZZLES, so the headline number means "of everything", not "of this set". */
+const SETS=[{k:"tactics",label:"Tactics",blurb:"Real positions from your games where you had a winning move and missed it. Only the engine's move counts — find it before you tap."},
+            {k:"endgame",label:"Endgames",blurb:"Endgames from your own games. 26% of your blunders land here, and they're the cheapest ones to stop making."}];
+let CURSET="tactics",ACTIVE=[];
+function setCounts(){const m={};PUZZLES.forEach(p=>{const c=p.cat||"tactics";(m[c]=m[c]||{n:0,solved:0}).n++;if(STATE.puzzles.solved[p.id])m[c].solved++;});return m;}
+function refreshSet(){
+  const c=setCounts();
+  if(!c[CURSET]){const first=SETS.map(s=>s.k).find(k=>c[k]);CURSET=first||"tactics";}
+  ACTIVE=PUZZLES.filter(p=>(p.cat||"tactics")===CURSET);
+}
+// Index into ACTIVE, not PUZZLES — the two differ as soon as a set is selected.
+function firstUnsolved(){refreshSet();for(let i=0;i<ACTIVE.length;i++)if(!STATE.puzzles.solved[ACTIVE[i].id])return i;return 0;}
+function renderSets(){
+  const c=setCounts(),el=$("#setSwitch");if(!el)return;
+  const shown=SETS.filter(s=>c[s.k]&&c[s.k].n);
+  el.style.display=shown.length>1?"":"none";      // no switcher when there's only one set
+  el.innerHTML=shown.map(s=>`<button data-set="${s.k}" class="${s.k===CURSET?'on':''}">${s.label}<b>${c[s.k].solved}/${c[s.k].n} solved</b></button>`).join("");
+  const bl=$("#puzBlurb");if(bl)bl.textContent=(SETS.find(s=>s.k===CURSET)||SETS[0]).blurb;
+}
+function switchSet(k){if(k===CURSET)return;CURSET=k;refreshSet();loadPuzzle(firstUnsolved());renderSets();}
+function renderEmptySet(){
+  $("#status").textContent="";$("#status").className="statusbar";
+  $("#board").innerHTML=`<div class="small muted" style="padding:26px 10px;text-align:center">No puzzles in this set yet.<br>The Sunday job adds more as you play.</div>`;
+  $("#puzMeta").textContent="—";$("#puzDots").innerHTML="";
+  ["pPrev","pNext","pHint","pSolve"].forEach(id=>{const b=$("#"+id);if(b)b.disabled=true;});
+}
+
+/* ---------- today's module + homework ----------
+   Today's module is the SAME check the Plan tab's weekly list owns
+   (STATE.checks[wkPre()+id]) — this is a second view of it, never a copy, so
+   ticking here moves the weekly progress bar too. Day index comes from
+   weekDates() so the Monday-start convention matches wkPre(). */
+function todayIdx(){const i=weekDates().indexOf(todayISO());return i<0?0:i;}
+function todayItem(){return WEEKLY[todayIdx()];}
+function todayKey(){return wkPre()+todayItem().id;}
+function renderToday(){
+  const it=todayItem(),done=!!STATE.checks[todayKey()];
+  if(!$("#todayText"))return;
+  $("#todayDay").textContent=it.day;
+  $("#todayText").textContent=it.t;
+  $("#todayText").style.textDecoration=done?"line-through":"";
+  $("#todayText").style.color=done?"var(--muted)":"";
+  $("#btnTodayDone").textContent=done?"✓ Done today — undo":"Mark today's module done";
+  $("#btnTodayDone").className=done?"ghost":"primary";
+  $("#todayCard").style.borderColor=done?"var(--good)":"var(--line)";
+  $("#todayHint").textContent=done
+    ? "Nice. Anything below is extra — pick whatever you feel like."
+    : "This is the priority, but nothing below is locked.";
+}
+function toggleToday(){const k=todayKey();STATE.checks[k]=!STATE.checks[k];save();renderToday();renderChecklist("#weeklyList",WEEKLY,wkPre());renderWeekProg();
+  toast(STATE.checks[k]?"Today's module done ✓":"Unmarked");}
+// Homework = the curriculum items that aren't the puzzle set itself.
+function hwItems(){return WORK.filter(w=>w.id!=="x_puz");}
+function hwCount(id,date){return ((STATE.homework||{})[date||todayISO()]||{})[id]||0;}
+function hwTotal(id){return Object.values(STATE.homework||{}).reduce((n,d)=>n+(d[id]||0),0);}
+function logHomework(id){
+  const d=todayISO();STATE.homework=STATE.homework||{};STATE.homework[d]=STATE.homework[d]||{};
+  STATE.homework[d][id]=(STATE.homework[d][id]||0)+1;
+  save();renderHomework();renderDash();          // goes through save() so `updated` advances and sync fires
+  toast("Logged ✓");
+}
+function renderHomework(){
+  const el=$("#hwList");if(!el)return;
+  el.innerHTML=hwItems().map(w=>{
+    const today=hwCount(w.id),total=hwTotal(w.id);
+    return `<div class="item"><div style="flex:1 1 auto">
+      <div class="t">${w.t}${w.tag?`<span class="tag ${w.tag==='core'?'t-core':'t-2nd'}">${w.tag==='core'?'core':'2nd front'}</span>`:""}</div>
+      <div class="d">${w.cat} · ${w.d}</div>
+      <div class="d" style="margin-top:2px;color:${today?'var(--good)':'var(--muted)'}">${today?`${today} today`:"none today"}${total?` · ${total} total`:""}</div>
+    </div><button class="hwbtn ${today?'ghost':'primary'}" data-hw="${w.id}">+ Log</button></div>`;
+  }).join("");
+}
 function loadPuzzle(i){
-  cur.idx=((i%PUZZLES.length)+PUZZLES.length)%PUZZLES.length;
-  const p=PUZZLES[cur.idx];
+  refreshSet();
+  if(!ACTIVE.length){renderEmptySet();return;}
+  cur.idx=((i%ACTIVE.length)+ACTIVE.length)%ACTIVE.length;
+  const p=ACTIVE[cur.idx];
   cur.ply=0;cur.sel=null;cur.wrong=false;cur.hint=null;cur.done=false;cur.fen=p.fen;cur.await=true;
   $("#puzExplain").style.display="none";
   $("#status").textContent=(p.sideToMove==="w"?"White":"Black")+" to move — "+p.motif;
   $("#status").className="statusbar";
-  $("#pHint").disabled=false;$("#pSolve").disabled=false;
+  // Re-enable ALL controls: renderEmptySet() disables Prev/Next too, and only
+  // re-enabling Hint/Solve here left navigation dead after visiting an empty set.
+  ["pPrev","pNext","pHint","pSolve"].forEach(id=>{const b=$("#"+id);if(b)b.disabled=false;});
   renderBoard();renderMeta();renderDots();
 }
-function renderBoard(){const p=PUZZLES[cur.idx];drawBoard(cur.fen,p.userColor,{sel:cur.sel,hint:cur.hint});}
-function renderMeta(){const p=PUZZLES[cur.idx];const sc=Object.keys(STATE.puzzles.solved).length;
-  $("#puzMeta").innerHTML=`Puzzle ${cur.idx+1}/${PUZZLES.length} · ${sc} solved · from <a href="${p.sourceUrl}" target="_blank">your game</a> (move ${p.moveNo})`;}
-function renderDots(){$("#puzDots").innerHTML=PUZZLES.map((p,i)=>`<div class="dot ${STATE.puzzles.solved[p.id]?'solved':''} ${i===cur.idx?'cur':''}" data-pi="${i}">${STATE.puzzles.solved[p.id]?'✓':i+1}</div>`).join("");}
+function renderBoard(){const p=ACTIVE[cur.idx];if(!p)return;drawBoard(cur.fen,p.userColor,{sel:cur.sel,hint:cur.hint});}
+function renderMeta(){const p=ACTIVE[cur.idx];if(!p)return;const sc=Object.keys(STATE.puzzles.solved).length;
+  $("#puzMeta").innerHTML=`Puzzle ${cur.idx+1}/${ACTIVE.length} · ${sc} solved · from <a href="${p.sourceUrl}" target="_blank">your game</a> (move ${p.moveNo})`;}
+function renderDots(){$("#puzDots").innerHTML=ACTIVE.map((p,i)=>`<div class="dot ${STATE.puzzles.solved[p.id]?'solved':''} ${i===cur.idx?'cur':''}" data-pi="${i}">${STATE.puzzles.solved[p.id]?'✓':i+1}</div>`).join("");}
 function boardClick(sq){
-  if(!cur.await||cur.done)return;const p=PUZZLES[cur.idx];const stm=fenTurn(cur.fen);
+  if(!cur.await||cur.done)return;const p=ACTIVE[cur.idx];const stm=fenTurn(cur.fen);
   const pc=pieceColorAt(cur.fen,sq);
   if(cur.sel===null){if(pc===stm){cur.sel=sq;renderBoard();}return;}
   if(sq===cur.sel){cur.sel=null;renderBoard();return;}
@@ -789,7 +379,7 @@ function boardClick(sq){
   }
 }
 function correctMove(){
-  const p=PUZZLES[cur.idx];const exp=p.line[cur.ply];
+  const p=ACTIVE[cur.idx];const exp=p.line[cur.ply];
   cur.fen=exp.fen;cur.ply++;cur.sel=null;cur.hint=null;cur.await=false;renderBoard();
   $("#status").textContent="✓ Correct";$("#status").className="statusbar status-ok";
   if(cur.ply>=p.line.length){return solved();}
@@ -799,7 +389,7 @@ function correctMove(){
   else{cur.await=true;}
 }
 function solved(){
-  const p=PUZZLES[cur.idx];cur.done=true;cur.await=false;
+  const p=ACTIVE[cur.idx];cur.done=true;cur.await=false;
   const first=!STATE.puzzles.solved[p.id]&&!cur.wrong;
   STATE.puzzles.solved[p.id]=true;if(first)STATE.puzzles.firstTry[p.id]=true;
   // mark daily solve
@@ -809,18 +399,18 @@ function solved(){
   $("#status").textContent=cur.wrong?"Solved 👍":"Solved first try! 🎯";$("#status").className="statusbar status-ok";
   const ex=$("#puzExplain");ex.style.display="block";ex.className="note good small";
   ex.innerHTML=`<b>${p.motif}.</b> ${p.explain} &nbsp;<a href="${p.sourceUrl}" target="_blank">See the game →</a>`;
-  renderDots();renderDash();
+  renderDots();renderDash();renderSets();   // keep the set switcher's solved counts live
   $("#pHint").disabled=true;$("#pSolve").disabled=true;
 }
 function showSolution(){
-  const p=PUZZLES[cur.idx];if(cur.done)return;cur.wrong=true;cur.await=false;cur.sel=null;cur.hint=null;
+  const p=ACTIVE[cur.idx];if(cur.done)return;cur.wrong=true;cur.await=false;cur.sel=null;cur.hint=null;
   let i=cur.ply;
   (function step(){if(i>=p.line.length){solved();return;}
     cur.fen=p.line[i].fen;cur.ply=i+1;renderBoard();
     $("#status").textContent="Solution: "+p.line[i].san;$("#status").className="statusbar";
     i++;setTimeout(step,620);})();
 }
-function hint(){if(cur.done||!cur.await)return;cur.hint=PUZZLES[cur.idx].line[cur.ply].from;renderBoard();
+function hint(){if(cur.done||!cur.await)return;cur.hint=ACTIVE[cur.idx].line[cur.ply].from;renderBoard();
   $("#status").textContent="Move this piece.";$("#status").className="statusbar";}
 
 /* ---------- other tabs ---------- */
@@ -868,6 +458,9 @@ document.addEventListener("click",e=>{
   const tb=e.target.closest("nav button");
   if(tb){goTab(tb.dataset.tab);return;}
   if(e.target.closest("#syncPill")){goTab("sync");return;}
+  const sw=e.target.closest("#setSwitch button");if(sw){switchSet(sw.dataset.set);return;}
+  if(e.target.id==="btnTodayDone"){toggleToday();return;}
+  const hw=e.target.closest("[data-hw]");if(hw){logHomework(hw.dataset.hw);return;}
   const sq=e.target.closest("#board .sq");if(sq){boardClick(sq.dataset.sq);return;}
   const dot=e.target.closest("#puzDots .dot");if(dot){loadPuzzle(+dot.dataset.pi);return;}
   if(e.target.id==="pNext"){loadPuzzle(cur.idx+1);return;}
@@ -895,7 +488,7 @@ function addLog(){const d=$("#logDate").value||todayISO();const a=parseFloat($("
 function doExport(){STATE.updated=new Date().toISOString();const j=JSON.stringify(STATE,null,1);$("#exportBox").value=j;
   try{const b=new Blob([j],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="chess-progress.json";a.click();URL.revokeObjectURL(u);}catch(e){}
   try{$("#exportBox").select();document.execCommand("copy");}catch(e){}toast("Exported — send it to Claude");}
-function doImport(){try{const o=JSON.parse($("#importBox").value);if(!o.puzzles&&!o.checks)throw 0;STATE=Object.assign(STATE,o);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};save();renderAll();loadPuzzle(firstUnsolved());toast("Imported ✓");}catch(e){toast("Couldn't read that");}}
+function doImport(){try{const o=JSON.parse($("#importBox").value);if(!o.puzzles&&!o.checks)throw 0;STATE=Object.assign(STATE,o);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};STATE.homework=STATE.homework||{};save();renderAll();loadPuzzle(firstUnsolved());toast("Imported ✓");}catch(e){toast("Couldn't read that");}}
 
 /* ---------- cloud sync (Supabase: Postgres + email/password auth) ------------
    Talks to the Supabase REST APIs directly — no SDK, no CDN script, so the app
@@ -1004,7 +597,7 @@ async function dbWrite(){
     headers:{"Prefer":"resolution=merge-duplicates,return=minimal"},
     body:JSON.stringify({user_id:cloud.uid,data:STATE,updated_at:new Date().toISOString()})},true);
 }
-function adoptRemote(r){Object.assign(STATE,r);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}}
+function adoptRemote(r){Object.assign(STATE,r);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};STATE.homework=STATE.homework||{};try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}}
 let pushT=null;
 function scheduleCloud(){if(!cloud.on)return;clearTimeout(pushT);pushT=setTimeout(async()=>{try{await dbWrite();setCloudStatus("Synced ✓ "+new Date().toLocaleTimeString());setSyncState("ok");}catch(e){setCloudStatus("Sync error — kept locally, will retry on next change");setSyncState("err");}},1200);}
 async function connectCloud(){
@@ -1030,7 +623,7 @@ async function connectCloud(){
 }
 function disconnectCloud(){cloud.on=false;cloud.at="";cloud.rt="";cloud.exp=0;saveCloud();renderCloud();setSyncState("off");setCloudStatus("Signed out — saving to this device only.");}
 
-function renderAll(){renderDash();renderCCT();renderChecklist("#weeklyList",WEEKLY,wkPre());renderWork();renderWeekProg();renderLog();renderCloud();renderSyncPill();}
+function renderAll(){renderDash();renderCCT();renderToday();renderSets();renderHomework();renderChecklist("#weeklyList",WEEKLY,wkPre());renderWork();renderWeekProg();renderLog();renderCloud();renderSyncPill();}
 (async function boot(){
   // Puzzles: try a live set (/puzzles.json, refreshed by the weekly job); fall back to embedded.
   try{const r=await fetch("puzzles.json",{cache:"no-store"});if(r.ok){const a=await r.json();if(Array.isArray(a)&&a.length&&a[0].fen&&a[0].line)PUZZLES=a;}}catch(e){}
