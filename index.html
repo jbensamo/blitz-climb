@@ -1030,7 +1030,10 @@ function renderAll(){renderDash();renderCCT();renderChecklist("#weeklyList",WEEK
   // Puzzles: try a live set (/puzzles.json, refreshed by the weekly job); fall back to embedded.
   try{const r=await fetch("puzzles.json",{cache:"no-store"});if(r.ok){const a=await r.json();if(Array.isArray(a)&&a.length&&a[0].fen&&a[0].line)PUZZLES=a;}}catch(e){}
   renderAll();loadPuzzle(firstUnsolved());
-  if(cloud.on&&cloud.token){setCloudStatus("Reconnecting…");
+  // Gate on the refresh token: it is what actually lets us re-establish a session.
+  // (This said `cloud.token` — a leftover field from the gist backend that no longer
+  // exists — so the block never ran and the app never pulled remote state on load.)
+  if(cloud.on&&cloud.rt){setCloudStatus("Reconnecting…");
     try{const r=await dbRead();if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);renderAll();loadPuzzle(firstUnsolved());}
       setSyncState("ok");setCloudStatus("Synced ✓ — signed in as "+cloud.email);}
     catch(e){setSyncState("err");setCloudStatus("Offline — using local copy, will sync on next change");}}
