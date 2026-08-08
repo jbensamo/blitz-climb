@@ -89,6 +89,7 @@
 
   <!-- HOME -->
   <section class="tabpage on" id="tab-home">
+    <div id="syncPill" class="pill" style="cursor:pointer" role="button" tabindex="0"></div>
     <div class="card"><h2 style="margin-top:2px">Where you stand</h2>
       <div class="row" id="dashStats"></div>
       <div style="margin-top:12px"><div class="small muted">Puzzles solved (from your own games)</div>
@@ -854,10 +855,14 @@ function renderWeekProg(){const done=WEEKLY.filter(w=>STATE.checks[wkPre()+w.id]
 function renderLog(){const S=STATE.sessions;$("#logTable").innerHTML=S.length?`<table><tr><th>Date</th><th>ACPL</th><th>Bl/g</th><th>Note</th></tr>${S.slice().reverse().map(x=>`<tr><td>${x.date}</td><td>${x.acpl}</td><td>${(+x.blunders).toFixed(2)}</td><td>${(x.note||'').replace(/</g,'&lt;')}</td></tr>`).join("")}</table>`:`<div class="small muted">No sessions yet.</div>`;if(!$("#logDate").value)$("#logDate").value=todayISO();}
 
 /* ---------- events ---------- */
+function goTab(t){$$(".tabpage").forEach(p=>p.classList.remove("on"));$("#tab-"+t).classList.add("on");
+  $$("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===t));window.scrollTo(0,0);}
+// #syncPill is role="button", so honour Enter/Space too.
+document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.id==="syncPill"){e.preventDefault();goTab("sync");}});
 document.addEventListener("click",e=>{
   const tb=e.target.closest("nav button");
-  if(tb){const t=tb.dataset.tab;$$(".tabpage").forEach(p=>p.classList.remove("on"));$("#tab-"+t).classList.add("on");
-    $$("nav button").forEach(b=>b.classList.remove("active"));tb.classList.add("active");window.scrollTo(0,0);return;}
+  if(tb){goTab(tb.dataset.tab);return;}
+  if(e.target.closest("#syncPill")){goTab("sync");return;}
   const sq=e.target.closest("#board .sq");if(sq){boardClick(sq.dataset.sq);return;}
   const dot=e.target.closest("#puzDots .dot");if(dot){loadPuzzle(+dot.dataset.pi);return;}
   if(e.target.id==="pNext"){loadPuzzle(cur.idx+1);return;}
@@ -900,6 +905,18 @@ cloud.token=cloud.token||"";cloud.gistId=cloud.gistId||"";cloud.on=!!cloud.on&&!
 function saveCloud(){try{localStorage.setItem(CKEY,JSON.stringify({token:cloud.token,gistId:cloud.gistId,on:cloud.on}));}catch(e){}}
 function setCloudStatus(t){const e=$("#cloudStatus");if(e)e.textContent=t;}
 function renderCloud(){if($("#ghToken"))$("#ghToken").value=cloud.token||"";if($("#gistId"))$("#gistId").value=cloud.gistId||"";}
+/* Home-tab indicator: sync is opt-in and per-browser, so make "off" visible
+   instead of only discoverable inside the Sync tab. */
+let syncState=cloud.on?"ok":"off";
+function setSyncState(s){syncState=s;renderSyncPill();}
+function renderSyncPill(){
+  const e=$("#syncPill");if(!e)return;
+  const v={off:["⇅ This device only — sync off · Set up","var(--muted)","var(--line)"],
+           ok:["⇅ Synced across your devices","var(--good)","var(--good)"],
+           err:["⇅ Sync error — saved on this device · Check","var(--warn)","var(--warn)"]}[syncState]||[];
+  e.textContent=v[0];e.style.color=v[1];e.style.borderColor=v[2];
+  e.title=syncState==="off"?"Progress stays in this browser. Tap to set up cross-device sync.":"Tap to open the Sync tab.";
+}
 // Returns null on 404 (no such gist) so callers can treat "gone" as "make a new one".
 async function ghApi(path,opts){
   const o=Object.assign({cache:"no-store"},opts||{});
@@ -934,7 +951,7 @@ async function gistWrite(){
 }
 function adoptRemote(r){Object.assign(STATE,r);STATE.puzzles=STATE.puzzles||{solved:{},attempts:{},firstTry:{}};try{localStorage.setItem(KEY,JSON.stringify(STATE));}catch(e){}}
 let pushT=null;
-function scheduleCloud(){if(!cloud.on)return;clearTimeout(pushT);pushT=setTimeout(async()=>{try{STATE.updated=new Date().toISOString();await gistWrite();setCloudStatus("Synced ✓ "+new Date().toLocaleTimeString());}catch(e){setCloudStatus("Sync error — kept locally, will retry on next change");}},1200);}
+function scheduleCloud(){if(!cloud.on)return;clearTimeout(pushT);pushT=setTimeout(async()=>{try{STATE.updated=new Date().toISOString();await gistWrite();setCloudStatus("Synced ✓ "+new Date().toLocaleTimeString());setSyncState("ok");}catch(e){setCloudStatus("Sync error — kept locally, will retry on next change");setSyncState("err");}},1200);}
 async function connectCloud(){
   cloud.token=(($("#ghToken").value)||"").trim();
   // Accept a bare id or a pasted gist URL.
@@ -944,20 +961,21 @@ async function connectCloud(){
   try{const r=await gistRead();
     if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);}
     else{STATE.updated=new Date().toISOString();await gistWrite();}
-    cloud.on=true;saveCloud();renderCloud();renderAll();loadPuzzle(firstUnsolved());
+    cloud.on=true;saveCloud();renderCloud();renderAll();loadPuzzle(firstUnsolved());setSyncState("ok");
     setCloudStatus("Synced ✓ — Gist ID “"+cloud.gistId+"” (enter that, with the same token, on your other device)");toast("Cloud sync on");
-  }catch(e){cloud.on=false;saveCloud();setCloudStatus("Couldn't connect: "+e.message);}
+  }catch(e){cloud.on=false;saveCloud();setSyncState("off");setCloudStatus("Couldn't connect: "+e.message);}
 }
-function disconnectCloud(){cloud.on=false;saveCloud();setCloudStatus("Disconnected — saving to this device only.");}
+function disconnectCloud(){cloud.on=false;saveCloud();setSyncState("off");setCloudStatus("Disconnected — saving to this device only.");}
 
-function renderAll(){renderDash();renderCCT();renderChecklist("#weeklyList",WEEKLY,wkPre());renderWork();renderWeekProg();renderLog();renderCloud();}
+function renderAll(){renderDash();renderCCT();renderChecklist("#weeklyList",WEEKLY,wkPre());renderWork();renderWeekProg();renderLog();renderCloud();renderSyncPill();}
 (async function boot(){
   // Puzzles: try a live set (/puzzles.json, refreshed by the weekly job); fall back to embedded.
   try{const r=await fetch("puzzles.json",{cache:"no-store"});if(r.ok){const a=await r.json();if(Array.isArray(a)&&a.length&&a[0].fen&&a[0].line)PUZZLES=a;}}catch(e){}
   renderAll();loadPuzzle(firstUnsolved());
   if(cloud.on&&cloud.token){setCloudStatus("Reconnecting…");
     try{const r=await gistRead();if(r&&(r.updated||"")>=(STATE.updated||"")){adoptRemote(r);renderAll();loadPuzzle(firstUnsolved());}
-      setCloudStatus("Synced ✓ (Gist “"+cloud.gistId+"”)");}catch(e){setCloudStatus("Offline — using local copy, will sync on next change");}}
+      setSyncState("ok");setCloudStatus("Synced ✓ (Gist “"+cloud.gistId+"”)");}
+    catch(e){setSyncState("err");setCloudStatus("Offline — using local copy, will sync on next change");}}
 })();
 </script>
 </body>
