@@ -49,6 +49,22 @@ docs/
 ```
 
 ## Architecture notes
+- **Diagnose -> prescribe loop.** `tools/diagnose.py` scans his games and records, for
+  every move that cost evaluation, (a) the theme of the move he MISSED and (b) the theme
+  of the opponent's reply he ALLOWED, plus phase and endgame material type ->
+  `data/diagnosis.json`. `tools/prescribe.py` turns that into `puzzles/prescribed.json`,
+  weighting "allowed" 1.5x "missed" because the plan's core leak is not scanning the
+  opponent's threats.
+  - **Validated against `data/baseline.json`**: run blitz-only at DROP=30 and the phase
+    split reproduces the baseline (59/25/16 vs 59/26/15). If a change to the scanner stops
+    reproducing that, the scanner is wrong — check it before trusting any output.
+  - Endgame-type and phase figures are exact; the tactical theme labels are a HEURISTIC
+    classifier (`classify()`), and `quietMove` doubles as its fallback bucket. That is why
+    `prescribe.py` caps any single theme at 20% of the set, and why the Home card says the
+    labels are a ranking, not a verdict. Don't present them as engine authority.
+  - The prescribed module is rebuilt weekly with a **date-stamped id prefix**
+    (`Lrx<yymmdd>_`). A rebuild is a different set of puzzles; reusing `Lrx1` would mark a
+    new puzzle already solved.
 - **Two kinds of module.** The list shows "From your own games" (built from his Lichess
   blunders — the irreplaceable part, keep it first) and "Graded curriculum" (648 puzzles
   from the Lichess CC0 database, rated 1600-2400). Provenance, filters and the legal

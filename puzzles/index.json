@@ -1,5 +1,17 @@
 [
  {
+  "id": "prescribed",
+  "cat": "prescribed",
+  "name": "\ud83c\udfaf Prescribed for you",
+  "blurb": "Chosen from your own error profile \u2014 heaviest on quietMove, skewer, fork, pin. Rebuilt each Sunday.",
+  "file": "puzzles/prescribed.json",
+  "prefix": "Lrx",
+  "n": 80,
+  "ratingLo": 1604,
+  "ratingHi": 2189,
+  "kb": 77
+ },
+ {
   "id": "rookend",
   "cat": "rookend",
   "name": "\u265c Rook endgames",

@@ -46,6 +46,20 @@ jobs:
         run: |
           python tools/merge_sets.py build/sets
           python build.py          # re-embed the offline fallback
+      # Re-diagnose which themes are actually costing him points, then re-aim the
+      # prescribed module at them. Needs the Lichess dump, which is NOT in the repo
+      # (305MB, gitignored) — so it is streamed and the scan early-exits once every
+      # bucket is full, which took ~16k rows locally.
+      - name: Re-diagnose weaknesses
+        run: python tools/diagnose.py data/games/blitz_latest.pgn
+      - name: Re-aim the prescribed module
+        run: |
+          sudo apt-get install -y zstd
+          curl -sL --max-time 2400 -o /tmp/puzzles.csv.zst https://database.lichess.org/lichess_db_puzzle.csv.zst
+          # New ids each week: a rebuilt prescription is a different set of puzzles,
+          # and progress is keyed by id alone.
+          ID_PREFIX="Lrx$(date -u +%y%m%d)_" zstd -dc /tmp/puzzles.csv.zst | python tools/prescribe.py
+          rm -f /tmp/puzzles.csv.zst
       - name: Publish fresh puzzles to Cloudflare KV
         if: ${{ env.CF_WORKER_URL != '' && env.ADMIN_TOKEN != '' }}
         run: python tools/publish_puzzles.py puzzles.json

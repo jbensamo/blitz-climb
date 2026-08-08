@@ -1,0 +1,224 @@
+{
+ "generated": null,
+ "gamesFrom": [
+  "data/games/blitz_60.pgn",
+  "data/games/rapid_60.pgn"
+ ],
+ "movesByHim": 4429,
+ "errors": 397,
+ "errorRate": 0.0896,
+ "missed": {
+  "quietMove": 162,
+  "skewer": 62,
+  "fork": 49,
+  "pin": 43,
+  "capture": 38,
+  "sacrifice": 37,
+  "discoveredAttack": 20,
+  "check": 19,
+  "hangingPiece": 15,
+  "mate": 2,
+  "advancedPawn": 1
+ },
+ "allowed": {
+  "quietMove": 110,
+  "capture": 76,
+  "skewer": 61,
+  "fork": 44,
+  "pin": 37,
+  "hangingPiece": 37,
+  "discoveredAttack": 29,
+  "sacrifice": 28,
+  "check": 21,
+  "mate": 8,
+  "advancedPawn": 1
+ },
+ "phases": {
+  "middlegame": 269,
+  "opening": 79,
+  "endgame": 49
+ },
+ "endgameTypes": {
+  "rookEndgame": 11,
+  "pawnEndgame": 4,
+  "bishopEndgame": 2,
+  "minorEndgame": 2
+ },
+ "examples": [
+  {
+   "fen": "r1bqk1nr/pp1p1pp1/2n4p/2b5/2BNP3/8/PP3PPP/RNBQK2R w KQkq - 1 8",
+   "url": "https://lichess.org/LFzxVKtM",
+   "move": 8,
+   "lost": 13.2,
+   "phase": "opening"
+  },
+  {
+   "fen": "r1bqk2r/pp1p1pp1/2n2n1p/2b5/2BNP3/4B3/PP3PPP/RN1QK2R w KQkq - 3 9",
+   "url": "https://lichess.org/LFzxVKtM",
+   "move": 9,
+   "lost": 19.4,
+   "phase": "opening"
+  },
+  {
+   "fen": "r1bq1rk1/1p1p1pp1/5n1p/p1b1n3/3NP3/1BN1B3/PP3PPP/R2Q1RK1 w - - 0 12",
+   "url": "https://lichess.org/LFzxVKtM",
+   "move": 12,
+   "lost": 25.0,
+   "phase": "opening"
+  },
+  {
+   "fen": "r1bqr1k1/pp2bppp/2n1p3/2pn4/8/1BNP1N2/PPPBQPPP/2KR3R b - - 5 10",
+   "url": "https://lichess.org/amZlQh1Y",
+   "move": 10,
+   "lost": 17.6,
+   "phase": "opening"
+  },
+  {
+   "fen": "r1bqr1k1/p4ppp/1pn1pb2/2pn4/4N1P1/1B1P1N2/PPPBQP1P/2KR3R b - - 0 12",
+   "url": "https://lichess.org/amZlQh1Y",
+   "move": 12,
+   "lost": 27.9,
+   "phase": "opening"
+  },
+  {
+   "fen": "r1b1r1k1/p1q2ppp/1pn1pb2/2pn2P1/4N3/1B1P1N2/PPPBQP1P/2KR3R b - - 0 13",
+   "url": "https://lichess.org/amZlQh1Y",
+   "move": 13,
+   "lost": 26.6,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r2br1k1/p4ppp/bp2p1P1/7P/3pNq2/1B1P4/PPP1QP2/1K1R3R b - - 0 19",
+   "url": "https://lichess.org/amZlQh1Y",
+   "move": 19,
+   "lost": 19.7,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "3r1rk1/1pq2ppp/p1p1p1b1/2bn4/3NPP2/1PPQB1P1/P5BP/R3R1K1 w - - 1 21",
+   "url": "https://lichess.org/h1Uvdpx8",
+   "move": 21,
+   "lost": 12.1,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r4rk1/2q2pbp/4p1p1/ppPn4/4B3/2P4P/PP1BQPP1/R4RK1 w - - 0 19",
+   "url": "https://lichess.org/lC5xFc7m",
+   "move": 19,
+   "lost": 14.0,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "5rk1/p1r2ppp/bp6/4p3/3bP1PP/2N5/PP6/2KRB2R b - - 2 19",
+   "url": "https://lichess.org/JLiskMlZ",
+   "move": 19,
+   "lost": 15.7,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r1bqk2r/p3bppp/2p1pn2/3P2B1/2B5/2N5/PPP2PPP/R2QK2R b KQkq - 0 9",
+   "url": "https://lichess.org/Y7lj0Mr2",
+   "move": 9,
+   "lost": 15.7,
+   "phase": "opening"
+  },
+  {
+   "fen": "2r2rk1/p4ppp/b3p3/3p4/6Q1/1B1R4/PqP2PPP/4R1K1 b - - 3 17",
+   "url": "https://lichess.org/Y7lj0Mr2",
+   "move": 17,
+   "lost": 18.1,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r1b1r1k1/4npbp/p1q1p1p1/1pB1P1N1/N1B5/1P6/P3QPPP/R4RK1 w - - 0 17",
+   "url": "https://lichess.org/Hj7jrZnr",
+   "move": 17,
+   "lost": 13.7,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r1b3k1/4rpbp/p1q1p1p1/1p2P1N1/N1B5/1P6/P3QPPP/R4RK1 w - - 0 18",
+   "url": "https://lichess.org/Hj7jrZnr",
+   "move": 18,
+   "lost": 30.2,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r5k1/qb2rpb1/p3p1pp/2N5/N1R5/1P3P2/P3Q1PP/5R1K w - - 4 26",
+   "url": "https://lichess.org/Hj7jrZnr",
+   "move": 26,
+   "lost": 12.2,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r1bqkb1r/pp2pppp/3p1n2/2p1n3/4P3/2PP2Q1/PP2BPPP/RNB1K1NR b KQkq - 5 6",
+   "url": "https://lichess.org/fmb3X4RJ",
+   "move": 6,
+   "lost": 24.1,
+   "phase": "opening"
+  },
+  {
+   "fen": "r2qkb1r/pp2pppp/3p1nb1/2p1n3/4P3/2PPBP2/PP2BQPP/RN2K1NR b KQkq - 4 9",
+   "url": "https://lichess.org/fmb3X4RJ",
+   "move": 9,
+   "lost": 16.5,
+   "phase": "opening"
+  },
+  {
+   "fen": "r2qkb1r/p4ppp/1p2pnb1/2ppn1B1/4P3/2PP1P2/PP1NBQPP/2KR2NR b kq - 1 12",
+   "url": "https://lichess.org/fmb3X4RJ",
+   "move": 12,
+   "lost": 19.8,
+   "phase": "opening"
+  },
+  {
+   "fen": "r2qk2r/p3bppp/1p2pnb1/2ppn1B1/4PP2/2PP4/PP1NBQPP/2KR2NR b kq - 0 13",
+   "url": "https://lichess.org/fmb3X4RJ",
+   "move": 13,
+   "lost": 13.3,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r2qk2r/p3bppp/1p2p1b1/2ppn1B1/4PPB1/2PP4/PP1N1QPP/2KR2NR b kq - 0 14",
+   "url": "https://lichess.org/fmb3X4RJ",
+   "move": 14,
+   "lost": 42.5,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r2qk2r/p3bppp/1p2p1b1/2pp2B1/4PPn1/2PP2Q1/PP1N2PP/2KR2NR b kq - 1 15",
+   "url": "https://lichess.org/fmb3X4RJ",
+   "move": 15,
+   "lost": 18.9,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r2qk2r/p4ppp/1p2p1b1/2pp2b1/4PPQ1/2PP4/PP1N2PP/2KR2NR b kq - 0 16",
+   "url": "https://lichess.org/fmb3X4RJ",
+   "move": 16,
+   "lost": 15.6,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r4k1r/p2q1ppp/1p4bb/2pp1P2/6Q1/2PP4/PP1N2PP/2K2RNR b - - 4 20",
+   "url": "https://lichess.org/fmb3X4RJ",
+   "move": 20,
+   "lost": 13.9,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r4k1r/p2q1ppb/1p6/2pp1P1Q/8/2PP4/PP1K2PP/5RNR b - - 0 23",
+   "url": "https://lichess.org/fmb3X4RJ",
+   "move": 23,
+   "lost": 36.3,
+   "phase": "middlegame"
+  },
+  {
+   "fen": "r2qk1nr/pbpp1p2/1p5p/3n2p1/8/P1PBBN2/2P2PPP/R2Q1RK1 w kq - 0 12",
+   "url": "https://lichess.org/Qmbhm6VL",
+   "move": 12,
+   "lost": 17.3,
+   "phase": "opening"
+  }
+ ]
+}
