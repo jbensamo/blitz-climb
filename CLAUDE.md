@@ -49,12 +49,20 @@ docs/
 ```
 
 ## Architecture notes
-- **Train tab**: `PUZZLES` is every puzzle; `ACTIVE` is the set being trained and is what
-  puzzle navigation indexes. `renderDash()` deliberately still counts `PUZZLES` so the
-  headline is "of everything". A set with zero puzzles is never offered, and the switcher
-  hides itself when only one set exists. "Today's module" is a second **view** of
-  `STATE.checks[wkPre()+id]` — the same key the Plan tab's weekly list owns — never a copy.
-  Nothing in the Train tab is ever locked; today's module is highlighted, not enforced.
+- **Train tab = module list -> trainer.** `MODULES` declares every trainable part of the
+  plan; each has a `cat` (matching the puzzle's `cat`) and a `kind`:
+  - `kind:"line"` — the classic trainer: play the engine's move(s) from `line[]`. Used by
+    tactics, endgames, endgame theory, strategy and openings, so those need **no new UI**.
+  - `kind:"find"` — click every square answering `prompt`; validated against `targets[]`.
+    Used by the C.C.T. scan. Scoring is all-or-nothing on purpose: a scan that misses one
+    capture is the scan that loses a piece.
+  - `CURMOD` null = module list; set = trainer. `ACTIVE` is that module's items and is what
+    puzzle navigation indexes. `renderDash()` deliberately still counts all of `PUZZLES`.
+  - **`markSolved()` is the single write path for BOTH kinds** — streak, `byDay`, Home
+    totals and cloud sync all depend on it. Never record a solve any other way.
+  - A module with zero items renders greyed out ("not built yet"), never clickable.
+  - "Today's module" is a second **view** of `STATE.checks[wkPre()+id]` — the same key the
+    Plan tab's weekly list owns — never a copy. Nothing is ever locked.
 - **App** (`index.html`): pure vanilla JS. Puzzles are embedded as a fallback, but on load
   the app fetches **`puzzles.json`** (relative — must stay at the site root, since Pages
   serves the app under `/blitz-climb/`) and uses it if present, so the weekly job refreshes
@@ -170,8 +178,12 @@ loop is inside GitHub, no Cloudflare needed.**
     `analyze.py` classifier's label, so "endgame" means the same thing as in the baseline.
   - **Ids must be globally unique across sets** — progress is keyed by id alone
     (`STATE.puzzles.solved[id]`). Prefixes in use: `p` (blitz tactics), `r` (rapid
-    tactics), `eb`/`er` (blitz/rapid endgames). Reusing a prefix silently marks new
-    puzzles as already solved.
+    tactics), `eb`/`er` (blitz/rapid endgames), `sb`/`sr` (strategy), `c` (C.C.T.),
+    `et` (endgame theory), `o` (openings), and `t<yymmdd>_`/`e<yymmdd>_` from the weekly
+    job. Reusing a prefix silently marks new puzzles as already solved.
+  - `merge_sets.py` only DERIVES `cat` for legacy items that lack one. It used to
+    re-derive every run, which clobbered explicit cats (strategy/cct/opening) back to
+    "tactics" on the second merge and silently emptied those modules.
 - Progress (`public.progress.data` jsonb / localStorage `chessTrainer_v5`):
   `{version, player, checks, habitDays, sessions:[{date,acpl,blunders,note}],
   puzzles:{solved,attempts,firstTry,byDay}, homework:{"<ISO date>":{"<work id>":count}},

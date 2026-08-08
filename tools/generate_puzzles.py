@@ -20,6 +20,10 @@ CACHE=os.environ.get("CACHE","candidates.json")
 ID_PREFIX=os.environ.get("ID_PREFIX","p")
 CAT=os.environ.get("CAT","tactics")                 # puzzle set the app groups by
 PHASE_ONLY=os.environ.get("PHASE_ONLY","")          # "" = any, or "endgame"/"middlegame"/"opening"
+QUIET_ONLY=os.environ.get("QUIET_ONLY","")          # keep only positions whose best move is
+                                                    # neither a capture nor a check (strategy)
+EXCLUDE=os.environ.get("EXCLUDE","")                # a puzzles.json whose FENs to skip, so a
+                                                    # new set is guaranteed new positions
 
 def phase(board):
     """Same definition analyze.py uses, so 'endgame' here matches the baseline stats."""
@@ -91,6 +95,11 @@ def main(path):
         json.dump(candidates, open(CACHE,"w"))
         print(f"candidates: {len(candidates)} ({int(time.time()-t0)}s) [cached]", flush=True)
 
+    skip_fens=set()
+    if EXCLUDE and os.path.exists(EXCLUDE):
+        skip_fens={q["fen"] for q in json.load(open(EXCLUDE))}
+        print(f"excluding {len(skip_fens)} positions already in {EXCLUDE}", flush=True)
+
     candidates.sort(reverse=True, key=lambda c:c[0])
     puzzles=[]; per_game=defaultdict(int)
     for drop, gi, fen, uc_s, played_uci, url, movno, ph in candidates:
@@ -98,6 +107,7 @@ def main(path):
         played = chess.Move.from_uci(played_uci)
         if len(puzzles)>=MAX_PUZZLES: break
         if per_game[gi]>=MAX_PER_GAME: continue
+        if fen in skip_fens: continue
         if time.time()-t0>WALL: break
         board=chess.Board(fen)
         # verify + build solution line (<=2 user moves)
@@ -135,6 +145,11 @@ def main(path):
         while line and not line[-1]["user"]:
             line.pop()
         if not line: continue
+        # Strategy set: the lesson is a quiet improving move, so drop anything that
+        # wins by force — those belong in the tactics set.
+        if QUIET_ONLY:
+            b0=chess.Board(fen); fm=chess.Move.from_uci(line[0]["uci"])
+            if b0.is_capture(fm) or b0.gives_check(fm): continue
         played_san = chess.Board(fen).san(played)
         mtf = motif(chess.Board(fen), line)
         gain_txt = ("forces mate" if first_gain and first_gain>=90000

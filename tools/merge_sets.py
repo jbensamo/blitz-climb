@@ -33,7 +33,11 @@ def phase_of(fen):
 merged = json.load(open("data/puzzles.json"))
 for p in merged:
     p["phase"] = p.get("phase") or phase_of(p["fen"])
-    p["cat"] = "endgame" if p["phase"] == "endgame" else "tactics"
+    # Only DERIVE a cat for legacy items that never had one. Re-deriving every run
+    # clobbered explicit cats (strategy/cct/opening) back to "tactics" on the second
+    # merge, silently emptying those modules.
+    if not p.get("cat"):
+        p["cat"] = "endgame" if p["phase"] == "endgame" else "tactics"
 
 seen_id = {p["id"] for p in merged}
 seen_fen = {p["fen"]: p["id"] for p in merged}
@@ -50,7 +54,7 @@ for path in paths:
         s = json.load(open(path))
     except Exception as e:
         print(f"  skip {path}: {e}");  continue
-    if not isinstance(s, list) or not s or "line" not in s[0]:
+    if not isinstance(s, list) or not s or not ("line" in s[0] or "targets" in s[0]):
         print(f"  skip {path}: not a puzzle set");  continue
     kept = 0
     for p in s:

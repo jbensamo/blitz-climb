@@ -1246,5 +1246,545 @@
   "sourceUrl": "https://lichess.org/nFicI1wk",
   "moveNo": 20,
   "explain": "You played c4. The engine's Ne6+ gains about +2.8."
+ },
+ {
+  "id": "c1",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "3r1r1k/pp4pp/1q2p1p1/2n3N1/6Q1/1P5R/P1n2PPP/4R1K1 b - - 1 20",
+  "sideToMove": "b",
+  "userColor": "b",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "e6",
+   "h7"
+  ],
+  "sourceUrl": "https://lichess.org/evbEgknC",
+  "moveNo": 20,
+  "motif": "2 captures available",
+  "explain": "Your opponent can capture on e6, h7. They also have 2 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c2",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "r1bq1rk1/ppp2pp1/7p/3Np2Q/2B1P3/7P/PPP2bP1/R1B4K b - - 1 14",
+  "sideToMove": "b",
+  "userColor": "b",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "c7",
+   "e5",
+   "f7",
+   "h6"
+  ],
+  "sourceUrl": "https://lichess.org/AXS9w4s9",
+  "moveNo": 14,
+  "motif": "4 captures available",
+  "explain": "Your opponent can capture on c7, e5, f7, h6. They also have 3 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c3",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "r6r/pp4k1/2np1Rp1/2p1p1P1/4P1q1/2PP2P1/PP4Q1/5RK1 b - - 3 24",
+  "sideToMove": "b",
+  "userColor": "b",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "d6",
+   "g6"
+  ],
+  "sourceUrl": "https://lichess.org/izDtp2gB",
+  "moveNo": 24,
+  "motif": "2 captures available",
+  "explain": "Your opponent can capture on d6, g6. They also have 2 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c4",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "8/pbpR3p/1p2kNp1/4p3/P4r1Q/1q3P2/7P/5R1K w - - 8 29",
+  "sideToMove": "w",
+  "userColor": "w",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "a4",
+   "f3",
+   "f6",
+   "h4"
+  ],
+  "sourceUrl": "https://lichess.org/we5YtFdR",
+  "moveNo": 29,
+  "motif": "4 captures available",
+  "explain": "Your opponent can capture on a4, f3, f6, h4. They also have 2 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c5",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "2r1r1k1/1b3ppp/p3pq2/1pP5/6QP/1B4R1/PP3PP1/4R1K1 b - - 0 21",
+  "sideToMove": "b",
+  "userColor": "b",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "e6",
+   "g7"
+  ],
+  "sourceUrl": "https://lichess.org/tMMJxqt1",
+  "moveNo": 21,
+  "motif": "2 captures available",
+  "explain": "Your opponent can capture on e6, g7. They also have 1 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c6",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "r2q2k1/pp1b1r1p/2n1pnp1/3p1pB1/3P2N1/2PB2P1/PPQ4P/4RR1K b - - 5 19",
+  "sideToMove": "b",
+  "userColor": "b",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "e6",
+   "f5",
+   "f6"
+  ],
+  "sourceUrl": "https://lichess.org/UsnqQKiW",
+  "moveNo": 19,
+  "motif": "3 captures available",
+  "explain": "Your opponent can capture on e6, f5, f6. They also have 2 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c7",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "r4rk1/1bp3pp/p3n1q1/1p1nN3/5pP1/2PP3P/PPB1QPKN/R4R2 b - - 0 21",
+  "sideToMove": "b",
+  "userColor": "b",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "g6"
+  ],
+  "sourceUrl": "https://lichess.org/VfNWEApu",
+  "moveNo": 21,
+  "motif": "1 capture available",
+  "explain": "Your opponent can capture on g6. They also have 0 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c8",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "r4rk1/1pp1bppp/p2q1n2/6B1/2P1P3/2NP4/1PP3PP/R2Q1RK1 b - - 0 14",
+  "sideToMove": "b",
+  "userColor": "b",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "a6",
+   "f6"
+  ],
+  "sourceUrl": "https://lichess.org/DtOTTcpg",
+  "moveNo": 14,
+  "motif": "2 captures available",
+  "explain": "Your opponent can capture on a6, f6. They also have 0 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c9",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "3r1rk1/1pq2pbp/pN2bnp1/2p1p3/4P3/2P1BP2/PPQ1B1PP/2KR3R w - - 0 16",
+  "sideToMove": "w",
+  "userColor": "w",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "a2",
+   "b6",
+   "d1",
+   "e4"
+  ],
+  "sourceUrl": "https://lichess.org/rKcZnn4k",
+  "moveNo": 16,
+  "motif": "4 captures available",
+  "explain": "Your opponent can capture on a2, b6, d1, e4. They also have 1 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c10",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "r4rk1/1p3ppn/pNpq3p/7Q/2P1P3/3P4/1PP3PP/R4RK1 b - - 1 19",
+  "sideToMove": "b",
+  "userColor": "b",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "a6",
+   "a8",
+   "f7",
+   "h6"
+  ],
+  "sourceUrl": "https://lichess.org/DtOTTcpg",
+  "moveNo": 19,
+  "motif": "4 captures available",
+  "explain": "Your opponent can capture on a6, a8, f7, h6. They also have 1 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c11",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "2R5/7R/kp1p4/p7/8/8/P1Pq3B/7K b - - 0 39",
+  "sideToMove": "b",
+  "userColor": "b",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "d6"
+  ],
+  "sourceUrl": "https://lichess.org/seIXQgbG",
+  "moveNo": 39,
+  "motif": "1 capture available",
+  "explain": "Your opponent can capture on d6. They also have 2 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c12",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "4r3/1Rp2p2/2P1n2p/3p1Kp1/k2B4/2R2P2/6rP/8 w - - 4 34",
+  "sideToMove": "w",
+  "userColor": "w",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "d4",
+   "h2"
+  ],
+  "sourceUrl": "https://lichess.org/E3lKaSbi",
+  "moveNo": 34,
+  "motif": "2 captures available",
+  "explain": "Your opponent can capture on d4, h2. They also have 2 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c13",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "1k3r1r/pppnqBbp/1n1p4/8/3PPQPP/2N5/PPP5/R1B2RK1 b - - 2 17",
+  "sideToMove": "b",
+  "userColor": "b",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "d6"
+  ],
+  "sourceUrl": "https://lichess.org/seIXQgbG",
+  "moveNo": 17,
+  "motif": "1 capture available",
+  "explain": "Your opponent can capture on d6. They also have 0 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "c14",
+  "kind": "find",
+  "cat": "cct",
+  "fen": "r2qk2r/pp3pp1/2np3p/3Q4/6bb/5N2/PP1N1PPP/R3KB1R w KQkq - 0 15",
+  "sideToMove": "w",
+  "userColor": "w",
+  "prompt": "Before you move: click every square where your opponent can capture.",
+  "targets": [
+   "f2",
+   "f3"
+  ],
+  "sourceUrl": "https://lichess.org/yBjwbvSC",
+  "moveNo": 15,
+  "motif": "2 captures available",
+  "explain": "Your opponent can capture on f2, f3. They also have 2 check(s) here. This is the position where you went wrong \u2014 the scan is what catches it.",
+  "phase": "middlegame"
+ },
+ {
+  "id": "sb1",
+  "fen": "r1b1r1k1/4npbp/p1q1p1p1/1pB1P1N1/N1B5/1P6/P3QPPP/R4RK1 w - - 0 17",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "c4d3",
+    "from": "c4",
+    "to": "d3",
+    "san": "Bd3",
+    "fen": "r1b1r1k1/4npbp/p1q1p1p1/1pB1P1N1/N7/1P1B4/P3QPPP/R4RK1 b - - 1 17",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "e7d5",
+    "from": "e7",
+    "to": "d5",
+    "san": "Nd5",
+    "fen": "r1b1r1k1/5pbp/p1q1p1p1/1pBnP1N1/N7/1P1B4/P3QPPP/R4RK1 w - - 2 18",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "e2f3",
+    "from": "e2",
+    "to": "f3",
+    "san": "Qf3",
+    "fen": "r1b1r1k1/5pbp/p1q1p1p1/1pBnP1N1/N7/1P1B1Q2/P4PPP/R4RK1 b - - 3 18",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "cat": "strategy",
+  "phase": "middlegame",
+  "youPlayed": "Bxe7",
+  "sourceUrl": "https://lichess.org/Hj7jrZnr",
+  "moveNo": 17,
+  "explain": "You played Bxe7. The engine's Bd3 gains about +3.5."
+ },
+ {
+  "id": "sb2",
+  "fen": "r2q1rk1/1p1bbppp/p7/n1p1p3/2PpP3/PN1P2P1/1PQ1NPBP/R4RK1 b - - 5 15",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "d7a4",
+    "from": "d7",
+    "to": "a4",
+    "san": "Ba4",
+    "fen": "r2q1rk1/1p2bppp/p7/n1p1p3/b1PpP3/PN1P2P1/1PQ1NPBP/R4RK1 w - - 6 16",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "cat": "strategy",
+  "phase": "middlegame",
+  "youPlayed": "Nxb3",
+  "sourceUrl": "https://lichess.org/POJknkcA",
+  "moveNo": 15,
+  "explain": "You played Nxb3. The engine's Ba4 gains about +4.7."
+ },
+ {
+  "id": "sr2",
+  "fen": "4rr2/5Q2/p1q1p2p/k1p1Rp2/1pP3p1/1P1PB3/P4P1P/6K1 w - - 6 29",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "f7a7",
+    "from": "f7",
+    "to": "a7",
+    "san": "Qa7",
+    "fen": "4rr2/Q7/p1q1p2p/k1p1Rp2/1pP3p1/1P1PB3/P4P1P/6K1 b - - 7 29",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "cat": "strategy",
+  "phase": "middlegame",
+  "youPlayed": "Qh5",
+  "sourceUrl": "https://lichess.org/2htWFeAy",
+  "moveNo": 29,
+  "explain": "You played Qh5. The engine's Qa7 forces mate."
+ },
+ {
+  "id": "sr3",
+  "fen": "6k1/6p1/2p1pp1p/1q1pP3/1P1P4/1Q1P2P1/r1N2PKP/8 b - - 1 33",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "b5a4",
+    "from": "b5",
+    "to": "a4",
+    "san": "Qa4",
+    "fen": "6k1/6p1/2p1pp1p/3pP3/qP1P4/1Q1P2P1/r1N2PKP/8 w - - 2 34",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "b3a4",
+    "from": "b3",
+    "to": "a4",
+    "san": "Qxa4",
+    "fen": "6k1/6p1/2p1pp1p/3pP3/QP1P4/3P2P1/r1N2PKP/8 b - - 0 34",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "a2a4",
+    "from": "a2",
+    "to": "a4",
+    "san": "Rxa4",
+    "fen": "6k1/6p1/2p1pp1p/3pP3/rP1P4/3P2P1/2N2PKP/8 w - - 0 35",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "cat": "strategy",
+  "phase": "middlegame",
+  "youPlayed": "Ra6",
+  "sourceUrl": "https://lichess.org/wy0YrQGB",
+  "moveNo": 33,
+  "explain": "You played Ra6. The engine's Qa4 gains about +3.5."
+ },
+ {
+  "id": "sr4",
+  "fen": "rn3rk1/pp3p1p/2p3p1/8/2B4q/2B1Q3/PPP3PP/2KR4 w - - 2 22",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "e3e5",
+    "from": "e3",
+    "to": "e5",
+    "san": "Qe5",
+    "fen": "rn3rk1/pp3p1p/2p3p1/4Q3/2B4q/2B5/PPP3PP/2KR4 b - - 3 22",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "h4g5",
+    "from": "h4",
+    "to": "g5",
+    "san": "Qg5+",
+    "fen": "rn3rk1/pp3p1p/2p3p1/4Q1q1/2B5/2B5/PPP3PP/2KR4 w - - 4 23",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "e5g5",
+    "from": "e5",
+    "to": "g5",
+    "san": "Qxg5",
+    "fen": "rn3rk1/pp3p1p/2p3p1/6Q1/2B5/2B5/PPP3PP/2KR4 b - - 0 23",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "cat": "strategy",
+  "phase": "middlegame",
+  "youPlayed": "Bb3",
+  "sourceUrl": "https://lichess.org/agYMMDsO",
+  "moveNo": 22,
+  "explain": "You played Bb3. The engine's Qe5 forces mate."
+ },
+ {
+  "id": "sr5",
+  "fen": "2r2r1k/pp6/2p4p/2R5/3Ppn2/PN5P/1P3P1K/2R5 b - - 1 27",
+  "sideToMove": "b",
+  "userColor": "b",
+  "line": [
+   {
+    "uci": "f4d3",
+    "from": "f4",
+    "to": "d3",
+    "san": "Nd3",
+    "fen": "2r2r1k/pp6/2p4p/2R5/3Pp3/PN1n3P/1P3P1K/2R5 w - - 2 28",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "c1c2",
+    "from": "c1",
+    "to": "c2",
+    "san": "R1c2",
+    "fen": "2r2r1k/pp6/2p4p/2R5/3Pp3/PN1n3P/1PR2P1K/8 b - - 3 28",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "d3c5",
+    "from": "d3",
+    "to": "c5",
+    "san": "Nxc5",
+    "fen": "2r2r1k/pp6/2p4p/2n5/3Pp3/PN5P/1PR2P1K/8 w - - 0 29",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "cat": "strategy",
+  "phase": "middlegame",
+  "youPlayed": "Ne2",
+  "sourceUrl": "https://lichess.org/M7SrFUjN",
+  "moveNo": 27,
+  "explain": "You played Ne2. The engine's Nd3 gains about +4.0."
+ },
+ {
+  "id": "sr6",
+  "fen": "r4rk1/5p1p/p2p1pp1/1pq5/4PP2/3B1P1b/PPP1Q2P/3R2RK w - - 3 23",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "f4f5",
+    "from": "f4",
+    "to": "f5",
+    "san": "f5",
+    "fen": "r4rk1/5p1p/p2p1pp1/1pq2P2/4P3/3B1P1b/PPP1Q2P/3R2RK b - - 0 23",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "cat": "strategy",
+  "phase": "middlegame",
+  "youPlayed": "Rg3",
+  "sourceUrl": "https://lichess.org/d5Yj0q5R",
+  "moveNo": 23,
+  "explain": "You played Rg3. The engine's f5 gains about +2.9."
+ },
+ {
+  "id": "sr7",
+  "fen": "6k1/pQp2ppp/8/3p2q1/3Pn3/BPP1rP2/P4KPP/R7 w - - 1 22",
+  "sideToMove": "w",
+  "userColor": "w",
+  "line": [
+   {
+    "uci": "f2g1",
+    "from": "f2",
+    "to": "g1",
+    "san": "Kg1",
+    "fen": "6k1/pQp2ppp/8/3p2q1/3Pn3/BPP1rP2/P5PP/R5K1 b - - 2 22",
+    "user": true,
+    "promo": null
+   },
+   {
+    "uci": "e4f6",
+    "from": "e4",
+    "to": "f6",
+    "san": "Nf6",
+    "fen": "6k1/pQp2ppp/5n2/3p2q1/3P4/BPP1rP2/P5PP/R5K1 w - - 3 23",
+    "user": false,
+    "promo": null
+   },
+   {
+    "uci": "a3c1",
+    "from": "a3",
+    "to": "c1",
+    "san": "Bc1",
+    "fen": "6k1/pQp2ppp/5n2/3p2q1/3P4/1PP1rP2/P5PP/R1B3K1 b - - 4 23",
+    "user": true,
+    "promo": null
+   }
+  ],
+  "motif": "Best move",
+  "cat": "strategy",
+  "phase": "middlegame",
+  "youPlayed": "fxe4",
+  "sourceUrl": "https://lichess.org/kHdEsYRN",
+  "moveNo": 22,
+  "explain": "You played fxe4. The engine's Kg1 gains about +2.4."
  }
 ]
